@@ -1,0 +1,50 @@
+Advanced Vulnerability Scan Results for .\app.py:
+Total lines of code: 16
+
+Detected Vulnerabilities:
+No high-confidence vulnerabilities detected.
+
+
+Advanced Vulnerability Scan Results for .\test_vuln_sample.py:
+Total lines of code: 14
+
+Detected Vulnerabilities:
+- Hardcoded Secret: Potential hardcoded secret: password = "admin123"
+  Severity: HIGH, Confidence: HIGH
+  Location: Line 4
+  Code: password = "admin123"
+
+- Vulnerable Component: Potentially vulnerable library: requests
+  Severity: HIGH, Confidence: HIGH
+  Location: Line 12
+  Code: import requests
+
+
+Advanced Vulnerability Scan Results for .\api\routes.py:
+Total lines of code: 8
+
+Detected Vulnerabilities:
+No high-confidence vulnerabilities detected.
+
+
+Advanced Vulnerability Scan Results for .\api\__init__.py:
+Total lines of code: 0
+
+Detected Vulnerabilities:
+No high-confidence vulnerabilities detected.
+
+
+Advanced Vulnerability Scan Results for .\models\user.py:
+Total lines of code: 8
+
+Detected Vulnerabilities:
+No high-confidence vulnerabilities detected.
+
+
+Advanced Vulnerability Scan Results for .\scripts\scanner_updated.py:
+Total lines of code: 199
+
+Detected Vulnerabilities:
+No high-confidence vulnerabilities detected.
+
+
