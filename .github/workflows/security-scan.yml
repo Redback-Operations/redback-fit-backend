@@ -1,8 +1,6 @@
 name: Run Python Security Scanner
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -22,7 +20,22 @@ jobs:
       - name: Install Bandit
         run: pip install bandit
 
-      - name: Run Custom Scanner
+      - name: Run Custom Scanner and capture output
+        id: run_scanner
         run: |
-          python scripts/scanner_updated.py
-          cat security-scan-results.txt
+          output=$(python scripts/scanner_updated.py)
+          echo "$output"
+          echo "scanner_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$output" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with scan results
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🔐 Security Scan Results from `scanner_updated.py`:
+            ```
+            ${{ steps.run_scanner.outputs.scanner_output }}
+            ```
