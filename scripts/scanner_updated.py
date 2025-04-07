@@ -186,8 +186,7 @@ def main():
     try:
         path = "."  # Scan the entire repository
         report = scan_file_or_directory(path)
-        with open('security-scan-results.txt', 'w') as f:
-            f.write(report)
+        print(report)
         print("Security scan completed successfully")
     except Exception as e:
         error_message = f"Error during security scan: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
