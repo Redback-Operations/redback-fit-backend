@@ -23,7 +23,11 @@ jobs:
       - name: Run Custom Scanner and capture output
         id: run_scanner
         run: |
+<<<<<<< HEAD
           output=$(python scripts/scanner_updated.py)
+=======
+          output=$(python scripts/amir_scanner_updated.py)
+>>>>>>> da5f5118eb37ddfdedc93835d2cc12d84dbb9465
           echo "$output"
           echo "scanner_output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
@@ -35,7 +39,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
+<<<<<<< HEAD
             ## 🔐 Security Scan Results from `scanner_updated.py`:
+=======
+            ## 🔐 Security Scan Results from `amir_scanner_updated.py`:
+>>>>>>> da5f5118eb37ddfdedc93835d2cc12d84dbb9465
             ```
             ${{ steps.run_scanner.outputs.scanner_output }}
             ```
