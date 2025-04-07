@@ -8,6 +8,10 @@ jobs:
   scan:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      pull-requests: write  # Needed to comment on PRs
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,22 +24,36 @@ jobs:
       - name: Install Bandit
         run: pip install bandit
 
-      - name: Run Custom Scanner and capture output
-        id: run_scanner
+      - name: Run Scanner and Capture Output
+        id: scan
         run: |
-          output=$(python scripts/amir_scanner_updated.py)
-          echo "$output"
-          echo "scanner_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$output" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "🔍 Running Security Scanner..."
+          output=$(python scripts/scanner_updated.py)
+          echo "$output" > full_output.txt
+          echo "scanner_output<<EOF" >> $GITHUB_ENV
+          echo "$output" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Comment PR with scan results
+          # Check for HIGH severity issues
+          if echo "$output" | grep -q "Severity: HIGH"; then
+            echo "has_high_issues=true" >> $GITHUB_ENV
+          else
+            echo "has_high_issues=false" >> $GITHUB_ENV
+          fi
+
+      - name: Comment PR with Scanner Results
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## 🔐 Security Scan Results from `amir_scanner_updated.py`:
+            ## 🔐 Security Scan Results from `scanner_updated.py`
+
+            **Scan Status:** ${{ env.has_high_issues == 'true' && '❌ Critical Issues Found!' || '✅ No Critical Issues Detected' }}
+
             ```
-            ${{ steps.run_scanner.outputs.scanner_output }}
+            ${{ env.scanner_output }}
             ```
+
+            ---
+            > ⚠️ Please address any critical/high severity vulnerabilities before merging.
