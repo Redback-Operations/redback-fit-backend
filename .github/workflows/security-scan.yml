@@ -44,6 +44,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Comment PR with Scanner Results
+        if: github.event_name == 'pull_request
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
