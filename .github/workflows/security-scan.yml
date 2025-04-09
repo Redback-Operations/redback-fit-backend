@@ -1,0 +1,59 @@
+name: Run Python Security Scanner
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Scanner and Capture Output
+        id: scan
+        run: |
+          echo "Running Security Scanner..."
+          output=$(python scripts/scanner_updated.py)
+          echo "$output" > full_output.txt
+          
+          if echo "$output" | grep -q "Severity: HIGH"; then
+            echo "scan_status=Critical Issues Found!" >> $GITHUB_ENV
+          else
+            echo "scan_status=No Critical Issues Detected" >> $GITHUB_ENV
+          fi
+
+          echo "scanner_output<<EOF" >> $GITHUB_ENV
+          echo "$output" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Comment PR with Scanner Results
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🔐 Security Scan Results from `scanner_updated.py`
+
+            **Scan Status:** ${{ env.scan_status }}
+
+            ```
+            ${{ env.scanner_output }}
+            ```
+
+            ---
+            > ⚠️ Please address any critical/high severity vulnerabilities before merging.
