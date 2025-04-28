@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from api.routes import api
 from api.profile import api as profile_api
+from api.goals import goals_bp
 from models.user import db, add_default_user
 from dotenv import load_dotenv
 import os
@@ -20,6 +21,7 @@ db.init_app(app)
 
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(goals_bp, url_prefix='/api/goals')
 
 with app.app_context():
     db.create_all()
