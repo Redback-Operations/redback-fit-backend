@@ -3,19 +3,32 @@ from flask import Flask, jsonify, redirect, url_for
 from flask_dance.contrib.google import make_google_blueprint, google
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
+from dotenv import load_dotenv
 
-# ✅ Allow HTTP for local development
+# 🔐 Load environment variables from .env file
+load_dotenv()
+
+# ✅ Allow HTTP for local development (OAuth)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+# ✅ Initialize Flask app
 app = Flask(__name__)
-app.secret_key = "test123"  # 🔐 Replace with a secure random secret in production
+app.secret_key = os.getenv("SECRET_KEY")
+
+# ✅ Fix cookie/session behavior for local dev
+app.config.update(
+    SESSION_COOKIE_SAMESITE="Lax",     # Allow cookie to be sent across ports (5000 → 5500)
+    SESSION_COOKIE_SECURE=False        # Don't require HTTPS for dev
+)
+
+# ✅ CORS setup to allow cross-origin cookies
 CORS(app, supports_credentials=True)
 
-# ✅ Replace with your actual Google OAuth credentials
-app.config["GOOGLE_OAUTH_CLIENT_ID"] = "1062579474786-6amk0lplnd08foeridr2jhtrikpqnv9k.apps.googleusercontent.com"
-app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = "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"
+# ✅ Google OAuth configuration from .env
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 
-# ✅ Set up Google OAuth blueprint
+# ✅ Register Google OAuth blueprint
 google_bp = make_google_blueprint(
     scope=["openid", "https://www.googleapis.com/auth/userinfo.email"],
     redirect_url="/api/login/callback"
@@ -24,7 +37,7 @@ app.register_blueprint(google_bp, url_prefix="/api/login")
 
 # ✅ Flask-Login setup
 login_manager = LoginManager(app)
-users = {}  # In-memory user storage
+users = {}  # Temporary in-memory storage
 
 class User(UserMixin):
     def __init__(self, id_, email):
@@ -38,12 +51,12 @@ class User(UserMixin):
 def load_user(user_id):
     return users.get(user_id)
 
-# ✅ Entry point to initiate login
+# ✅ Route to initiate login
 @app.route("/api/login")
 def login():
     return redirect(url_for("google.login"))
 
-# ✅ Callback route after successful Google login
+# ✅ OAuth callback route
 @app.route("/api/login/callback")
 def callback():
     if not google.authorized:
@@ -52,16 +65,16 @@ def callback():
     resp = google.get("/oauth2/v2/userinfo")
     if not resp.ok:
         return "Failed to fetch user info", 400
-    
+
     info = resp.json()
     user = User(info["id"], info["email"])
     users[user.id] = user
     login_user(user)
 
-    # ✅ Redirect to your frontend hosted locally (served with python -m http.server 5500)
+    # ✅ Redirect back to frontend after login
     return redirect("http://localhost:5500/index.html")
 
-# ✅ Endpoint to get user info
+# ✅ Authenticated user info endpoint
 @app.route("/api/user")
 def user_info():
     if current_user.is_authenticated:
@@ -75,6 +88,6 @@ def logout():
     logout_user()
     return jsonify({"message": "Logged out"})
 
-# ✅ Start the Flask app
+# ✅ Start app on localhost:5000
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(host="localhost", port=5000, debug=True)
