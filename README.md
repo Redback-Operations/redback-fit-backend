@@ -39,10 +39,19 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     pip install -r requirements.txt
     ```
 
-6. Run the Flask server  
+6. Create a `.env` file in the project root with the following content:
+    ```env
+    FLASK_ENV=development
+    FLASK_APP=app.py
+    SECRET_KEY=SECRET_KEY
+    DATABASE_URL=sqlite:///your_database.db
+    PORT=5000
+    ```
+
+7. Run the Flask server  
     ```bash
     python app.py
     ```
+
 Once running, the backend will be available at:  
 `http://localhost:5000`
-
