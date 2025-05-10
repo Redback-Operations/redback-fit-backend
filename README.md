@@ -43,10 +43,23 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     ```env
     FLASK_ENV=development
     FLASK_APP=app.py
-    SECRET_KEY=SECRET_KEY
+    SECRET_KEY=your-secret-key-here  # ⚠️ Change this to a strong, unique value before deploying to production
     DATABASE_URL=sqlite:///your_database.db
     PORT=5000
+
+    # Firebase Configuration
+    FIREBASE_API_KEY=your-api-key
+    FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+    FIREBASE_PROJECT_ID=your-project-id
+    FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+    FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+    FIREBASE_APP_ID=your-app-id
+    FIREBASE_MEASUREMENT_ID=your-measurement-id
+    FIREBASE_DATABASE_URL=https://your-project.firebaseio.com
+    FIREBASE_CREDENTIALS_PATH=path/to/your/firebase/credentials.json
     ```
+
+    > ⚠️ Do not commit your `.env` file or Firebase credentials to version control. Add these files to your `.gitignore`.
 
 7. Run the Flask server  
     ```bash
