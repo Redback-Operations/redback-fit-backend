@@ -22,7 +22,7 @@ def get_dashboard_data():
 
     if user:
         current_utc_time = datetime.now(timezone.utc)
-        vo2_max = 45
+        vo2_max = 45 # placeholder for further implementation
 
         # DEBUG LOGGING
         print(f"User fetched: {user.as_dict()}", file=sys.stderr)
