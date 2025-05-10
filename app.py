@@ -54,7 +54,7 @@ def index():
         try:
             user = auth.sign_in_with_email_and_password(email, password)
             session['user'] = email
-            return redirect('/')
+            return redirect('/home')
         except:
             error = "Login failed. Please check your credentials."
 
