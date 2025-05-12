@@ -1,5 +1,3 @@
-
-
 from flask import Flask, jsonify, session, render_template, request, redirect
 from flask_cors import CORS
 from api.routes import api
@@ -16,7 +14,6 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
 # Firebase configuration
-
 config = {
     'apiKey': os.getenv('FIREBASE_API_KEY'),
     'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
@@ -45,7 +42,7 @@ with app.app_context():
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
 
-# Routes
+# Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     error = None
@@ -58,13 +55,10 @@ def index():
             return redirect('/home')
         except:
             error = "Login failed. Please check your credentials."
+
     return render_template('index.html', user=session.get('user'), error=error)
 
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/')
-
+# Signup route
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     error = None
@@ -80,6 +74,11 @@ def signup():
 
     return render_template('signup.html', error=error)
 
+# Logout route
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/')
 
 @app.route('/home')
 def home():
@@ -87,10 +86,10 @@ def home():
         return render_template('home.html', user=session['user'])
     return redirect('/')
 
+# Example API route
 @app.route('/api/hello', methods=['GET'])
 def hello():
     return jsonify({'message': 'Hello from Flask!'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=int(os.getenv("PORT", 5000)))
-    app.run(port=5000)
