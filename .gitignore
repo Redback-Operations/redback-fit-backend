@@ -2,3 +2,7 @@
 __pycache__/
 env/
 .env
+.ipynb_checkpoints/
+
+# ignore all JSONs in config
+/config/*.json
