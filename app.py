@@ -3,6 +3,7 @@ from flask_cors import CORS
 from api.routes import api
 from api.profile import api as profile_api
 from api.goals import goals_bp
+from api.dashboard import dashboard_bp 
 from models.user import db, add_default_user
 from dotenv import load_dotenv
 import os
@@ -39,6 +40,7 @@ db.init_app(app)
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
+app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 
 with app.app_context():
     db.create_all()
@@ -54,7 +56,7 @@ def index():
         try:
             user = auth.sign_in_with_email_and_password(email, password)
             session['user'] = email
-            return redirect('/home')
+            return redirect('/')
         except:
             error = "Login failed. Please check your credentials."
 
@@ -78,4 +80,4 @@ def hello():
     return jsonify({'message': 'Hello from Flask!'}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=int(os.getenv("PORT", 5000)))
+    app.run(debug=False, port=int(os.getenv("PORT", 5000)))
