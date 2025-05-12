@@ -26,8 +26,8 @@ def get_profile():
     return jsonify({
         'id': user.id,
         'name': user.name,
-        'account': user.account,
-        'birthDate': user.birthDate,
+        'email': user.email,
+        'birth_date': user.birth_date,
         'gender': user.gender,
         'avatar': user.avatar
     }), 200
@@ -46,8 +46,8 @@ def update_profile():
 
     data = request.get_json() or {}
     user.name = data.get('name', user.name)
-    user.account = data.get('account', user.account)
-    user.birthDate = data.get('birthDate', user.birthDate)
+    user.email= data.get('email', user.email)
+    user.birthi_date = data.get('birth_date', user.birth_date)
     user.gender = data.get('gender', user.gender)
     user.avatar = data.get('avatar', user.avatar)
 

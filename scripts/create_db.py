@@ -29,7 +29,7 @@ def main():
 
         #  Optionally seed a sample goal for the default user
         default_user = UserProfile.query.filter_by(
-            account='redback.operations@deakin.edu.au'
+            email='redback.operations@deakin.edu.au'
         ).first()
         if default_user and default_user.goals.count() == 0:
             sample_goal = Goal(

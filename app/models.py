@@ -8,9 +8,9 @@ class UserProfile(db.Model):
 
     id          = db.Column(db.Integer, primary_key=True)
     name        = db.Column(db.String(100), nullable=False)
-    account     = db.Column(db.String(100), unique=True, nullable=False)
-    birth_date  = db.Column(db.String(10), nullable=False)
-    gender      = db.Column(db.String(10), nullable=False)
+    email       = db.Column(db.String(100), unique=True, nullable=False)
+    birth_date  = db.Column(db.String(10), nullable=True)
+    gender      = db.Column(db.String(10), nullable=True)
     avatar      = db.Column(db.String(200), nullable=True)
 
     # backref for goals
@@ -20,7 +20,7 @@ class UserProfile(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "account": self.account,
+            "email": self.email,
             "birth_date": self.birth_date,
             "gender": self.gender,
             "avatar": self.avatar,
@@ -29,10 +29,10 @@ class UserProfile(db.Model):
     @staticmethod
     def add_default_user():
         """Seed a default user if none exists."""
-        if not UserProfile.query.filter_by(account='redback.operations@deakin.edu.au').first():
+        if not UserProfile.query.filter_by(email='redback.operations@deakin.edu.au').first():
             default = UserProfile(
                 name='Austin Blaze',
-                account='redback.operations@deakin.edu.au',
+                email='redback.operations@deakin.edu.au',
                 birth_date='2000-01-01',
                 gender='Male',
                 avatar='src/assets/ProfilePic.png'

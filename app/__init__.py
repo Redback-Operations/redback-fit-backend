@@ -35,7 +35,7 @@ def create_app(config_class=Config):
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
     # app.register_blueprint(friends_bp, url_prefix='/api/friends')
 
-    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(api_bp, url_prefix='/api/test')
 
     # Health-check endpoint
     @app.route('/', methods=['GET'])
