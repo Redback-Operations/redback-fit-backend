@@ -65,6 +65,22 @@ def logout():
     session.pop('user', None)
     return redirect('/')
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        try:
+            auth.create_user_with_email_and_password(email, password)
+            session['user'] = email
+            return redirect('/home')
+        except Exception as e:
+            error = "Signup failed. " + str(e).split("]")[-1].strip().strip('"')
+
+    return render_template('signup.html', error=error)
+
+
 @app.route('/home')
 def home():
     if 'user' in session:
