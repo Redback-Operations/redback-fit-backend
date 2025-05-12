@@ -1,32 +1,53 @@
-import sqlite3
+#!/usr/bin/env python3
+import os, sys
+from dotenv import load_dotenv
 
-# Connect to the SQLite database (it will create the file if it doesn't exist)
-conn = sqlite3.connect('my_database.db')
+# Ensure project root is on the import path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Create a cursor object to interact with the database
-cursor = conn.cursor()
+# Load environment variables from .env
+load_dotenv()
 
-# Create a new table (you can change the schema as needed)
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS goals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    steps INTEGER DEFAULT 0,
-    minutes_running INTEGER DEFAULT 0,
-    minutes_cycling INTEGER DEFAULT 0,
-    minutes_swimming INTEGER DEFAULT 0,
-    minutes_exercise INTEGER DEFAULT 0,
-    calories INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-''')
+from app import create_app
+from app.extensions import db
+from app.models import UserProfile, Goal
+from datetime import date
 
-# Commit changes
-conn.commit()
 
-# Close the connection
-conn.close()
+def main():
+    # Initialize Flask app and push context
+    app = create_app()
+    with app.app_context():
+        #  Drop all existing tables to avoid stale schemas
+        db.drop_all()
 
-print("Database and table created successfully.")
+        #  Create all tables based on current SQLAlchemy models
+        db.create_all()
+
+        #  Seed a default user if not already present
+        UserProfile.add_default_user()
+
+        #  Optionally seed a sample goal for the default user
+        default_user = UserProfile.query.filter_by(
+            account='redback.operations@deakin.edu.au'
+        ).first()
+        if default_user and default_user.goals.count() == 0:
+            sample_goal = Goal(
+                user_id=default_user.id,
+                start_date=date.today(),
+                end_date=date.today(),
+                steps=10000,
+                minutes_running=30,
+                minutes_cycling=0,
+                minutes_swimming=0,
+                minutes_exercise=45,
+                calories=500
+            )
+            db.session.add(sample_goal)
+            db.session.commit()
+
+        print("Dev database reset and created with schema v", 
+              app.config['SQLALCHEMY_DATABASE_URI'])
+
+if __name__ == '__main__':
+    main()
