@@ -19,9 +19,9 @@ config = {
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 
-email = 'test@gmail.com'
-password = '123456'
-
+#Please adjust the environment variable to create a user, within the Flask database
+email = os.getenv("TEST_EMAIL")
+password = os.getenv("TEST_PASSWORD")
 
 #user = auth.create_user_with_email_and_password(email, password)
 #print(user)
