@@ -30,6 +30,6 @@ def home():
         return render_template('home.html', user=session['user'])
     return redirect(url_for('web.index'))
 
-@web_bp.route('/api/hello', methods=['GET'])
+@web_bp.route('/hello', methods=['GET'])
 def hello():
     return jsonify({'message': 'Hello from Flask!'}), 200

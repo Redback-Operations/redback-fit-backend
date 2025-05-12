@@ -3,6 +3,8 @@ from flask import Flask
 from app.config import Config
 from app.extensions import db, migrate, cors, oauth, init_firebase_app
 from app.routes.auth import auth_bp
+
+from app.routes.web import web_bp 
 from app.routes.goals import goals_bp 
 # from app.routes.friends import friends_bp
 from app.routes.profile import profile_bp 
@@ -35,7 +37,8 @@ def create_app(config_class=Config):
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
     # app.register_blueprint(friends_bp, url_prefix='/api/friends')
 
-    app.register_blueprint(api_bp, url_prefix='/api/test')
+    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(web_bp, url_prefix='/api/web')
 
     # Health-check endpoint
     @app.route('/', methods=['GET'])

@@ -9,7 +9,7 @@ auth_bp = Blueprint('auth', __name__)
 # Manual Registration
 @auth_bp.route('/register', methods=['POST'])
 def register():
-   
+    print("Register endpoint hit")
     
     """Register a new user with full name, email and password."""
     data = request.get_json() or {}
