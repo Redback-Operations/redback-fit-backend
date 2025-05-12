@@ -92,4 +92,6 @@ def hello():
     return jsonify({'message': 'Hello from Flask!'}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=int(os.getenv("PORT", 5000)))
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+app.run(debug=debug_mode, port=int(os.getenv("PORT", 5000)))
+
