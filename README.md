@@ -8,12 +8,11 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
 - [Postman](https://www.postman.com/downloads/) installed (optional, for testing endpoints)
 
 ## Technology Stack
-### Copmpnent            ###Technology                ###Purpose
-Framework                Flask                        REST API development
-Database                 SQLite (Development)         Local data storage
-Auth                     Firebase Auth                Secure user authentication
-Testing                  Postman                      Endpoint validation
-CI/CD                    Github Actions               Security scans & automated tests    
+Framework: Flask  
+Database: SQLite (Development)
+Auth: Firebase Auth
+Testing: Postman
+CI/CD: Github Actions
 
 ### Getting Started
 1. Clone the repository to your local machine  
