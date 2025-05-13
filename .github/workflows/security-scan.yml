@@ -1,62 +1,147 @@
-name: Run Python Security Scanner
+name: Security Scan
 
 on:
-  push:
-    branches: [ main ]
   pull_request_target:
-    branches: [ main ]
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+  security-events: write
+  statuses: write
 
 jobs:
-  scan:
+  security-scan:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      pull-requests: write
-
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Bandit
-        run: pip install bandit
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-      - name: Run Scanner and Capture Output
-        id: scan
+      - name: Install dependencies
         run: |
-          echo "Running Security Scanner..."
-          output=$(python scripts/scanner_updated.py)
-          echo "$output" > full_output.txt
+          python -m pip install --upgrade pip
+          pip install bandit safety
+
+      - name: Run Security Scan
+        id: security_scan
+        run: |
+          # Run bandit recursively on all Python files
+          echo "Running Bandit security scan..."
+          bandit -r . -f txt -o bandit-results.txt || true
           
-          if echo "$output" | grep -q "Severity: HIGH"; then
-            echo "scan_status=Critical Issues Found!" >> $GITHUB_ENV
+          # Run Safety check on requirements
+          if [ -f "requirements.txt" ]; then
+            echo "Checking dependencies with Safety..."
+            safety scan -r requirements.txt --output text > safety-results.txt || true
+          fi
+          
+          # Combine results
+          echo "🔒 Security Scan Results" > security-scan-results.txt
+          echo "=========================" >> security-scan-results.txt
+          echo "" >> security-scan-results.txt
+          
+          if [ -f "bandit-results.txt" ]; then
+            echo "Bandit Scan Results:" >> security-scan-results.txt
+            echo "-------------------" >> security-scan-results.txt
+            cat bandit-results.txt >> security-scan-results.txt
+            echo "" >> security-scan-results.txt
+          fi
+          
+          if [ -f "safety-results.txt" ]; then
+            echo "Dependency Check Results:" >> security-scan-results.txt
+            echo "-----------------------" >> security-scan-results.txt
+            cat safety-results.txt >> security-scan-results.txt
+          fi
+          
+          # Check for critical issues
+          if grep -iE "Severity\:\ High|Severity\:\ Critical" bandit-results.txt > /dev/null 2>&1; then
+            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
+          elif [ -f "safety-results.txt" ] && grep -iE "critical" safety-results.txt > /dev/null 2>&1; then
+            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
           else
-            echo "scan_status=No Critical Issues Detected" >> $GITHUB_ENV
+            echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
           fi
 
-          echo "scanner_output<<EOF" >> $GITHUB_ENV
-          echo "$output" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+      - name: Create comment body
+        id: create-comment
+        if: always()
+        run: |
+          if [ -f security-scan-results.txt ]; then
+            SCAN_RESULTS=$(cat security-scan-results.txt)
+            if [ "${{ steps.security_scan.outputs.vulnerabilities_found }}" == "true" ]; then
+              echo 'comment_body<<EOF' >> $GITHUB_ENV
+              echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo '```' >> $GITHUB_ENV
+              echo "$SCAN_RESULTS" >> $GITHUB_ENV
+              echo '```' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo '⛔️ **Critical vulnerabilities detected. Please review and address these security issues before merging.**' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo '### Next Steps:' >> $GITHUB_ENV
+              echo '1. Review each critical finding above and fix them according to OWASP top 10 mitigations.' >> $GITHUB_ENV
+              echo 'EOF' >> $GITHUB_ENV
+            else
+              echo 'comment_body<<EOF' >> $GITHUB_ENV
+              echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo '```' >> $GITHUB_ENV
+              echo "$SCAN_RESULTS" >> $GITHUB_ENV
+              echo '```' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo '✅ **No critical security issues detected.**' >> $GITHUB_ENV
+              echo '' >> $GITHUB_ENV
+              echo 'The code has passed all critical security checks.' >> $GITHUB_ENV
+              echo 'EOF' >> $GITHUB_ENV
+            fi
+          else
+            echo 'comment_body<<EOF' >> $GITHUB_ENV
+            echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
+            echo '' >> $GITHUB_ENV
+            echo '⚠️ **Error: The security scan failed to complete. Please review the workflow logs for more information.**' >> $GITHUB_ENV
+            echo 'EOF' >> $GITHUB_ENV
+          fi
 
-      - name: Comment PR with Scanner Results
-        if: github.event_name == 'pull_request_target' && github.repository == 'Redback-Operations/redback-fit-backend'
-        uses: peter-evans/create-or-update-comment@v3
+      - name: Comment PR
+        uses: peter-evans/create-or-update-comment@v4
+        if: always()
         with:
-          token: ${{ secrets.GH_PAT }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## 🔐 Security Scan Results from `scanner_updated.py`
+          body: ${{ env.comment_body }}
 
-            **Scan Status:** ${{ env.scan_status }}
+      - name: Upload scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: |
+            security-scan-results.txt
+            bandit-results.txt
+            safety-results.txt
+          retention-days: 5
 
-            ```
-            ${{ env.scanner_output }}
-            ```
-
-            ---
-            > ⚠️ Please address any critical/high severity vulnerabilities before merging.
+      - name: Fail if vulnerabilities found
+        if: steps.security_scan.outputs.vulnerabilities_found == 'true'
+        run: |
+          echo "::error::Critical security vulnerabilities were detected. Please review the findings and address them before merging."
+          exit 1
