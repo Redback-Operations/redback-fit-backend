@@ -7,6 +7,12 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
 - [Python 3.9+](https://www.python.org/downloads/) installed
 - [Postman](https://www.postman.com/downloads/) installed (optional, for testing endpoints)
 
+## Technology Stack
+- Framework: Flask
+- Database: SQLite (Development)
+- Auth: Firebase Auth
+- Testing: Postman
+- CI/CD: Github Actions
 
 ### Getting Started
 1. Clone the repository to your local machine  
@@ -39,10 +45,16 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     pip install -r requirements.txt
     ```
 
-6. Run the Flask server  
+6. Initialize Database  
+    ```bash
+    python scripts/create_db.py
+    ```
+
+7. Run the Flask server  
     ```bash
     python app.py
     ```
 Once running, the backend will be available at:  
 `http://localhost:5000`
 
+The Environment used in the backend are available for reference in the .env.example file located inside the Backend folder.
