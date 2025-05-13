@@ -1,55 +1,74 @@
-# /api/profile.py
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request
+from app.extensions import token_required, db
 from app.models import UserProfile
-from app.extensions import db
-
-profile_bp = Blueprint('profile', __name__)
+from datetime import datetime
 
 
-# Profile Endpoints #
+profile_bp = Blueprint('profile', __name__, url_prefix='/api/profile')
 
-# These routes are used by the frontend to fetch/update the user profile.
-# Requires frontend request structure from ProfilePage.tsx
-
-@profile_bp.route('', methods=['GET'])
-def get_profile():
-    """Fetch the authenticated user's profile."""
-    user_info = session.get('user')
-    if not user_info:
-        return jsonify({'message': 'Unauthorized'}), 401
-
-    user_id = user_info.get('id') or user_info.get('sub')
-    user = UserProfile.query.get(user_id)
-    if not user:
-        return jsonify({'message': 'User not found'}), 404
+@profile_bp.route('/', methods=['GET'])
+@token_required
+def get_profile(current_uid):
+    """
+    Fetch the authenticated user's profile. Returns defaults if none exists.
+    """
+    print("hit")
+    profile = UserProfile.query.get(current_uid)
+    if not profile:
+        return jsonify({
+            'uid': current_uid,
+            'name': None,
+            'email': None,
+            'birth_date': None,
+            'gender': None,
+            'avatar': None
+        }), 200
 
     return jsonify({
-        'id': user.id,
-        'name': user.name,
-        'email': user.email,
-        'birth_date': user.birth_date,
-        'gender': user.gender,
-        'avatar': user.avatar
+        'uid': profile.uid,
+        'name': profile.name,
+        'email': profile.email,
+        'birth_date': profile.birth_date.isoformat() if profile.birth_date else None,
+        'gender': profile.gender,
+        'avatar': profile.avatar
     }), 200
 
-@profile_bp.route('', methods=['PUT'])
-def update_profile():
-    """Update the authenticated user's profile."""
-    user_info = session.get('user')
-    if not user_info:
-        return jsonify({'message': 'Unauthorized'}), 401
-
-    user_id = user_info.get('id') or user_info.get('sub')
-    user = UserProfile.query.get(user_id)
-    if not user:
-        return jsonify({'message': 'User not found'}), 404
-
+@profile_bp.route('/', methods=['PUT'])
+@token_required
+def update_profile(current_uid):
+    """
+    Update or create the user's profile fields. Accepts JSON with any of:
+    name, email, birth_date (YYYY-MM-DD), gender, avatar.
+    """
     data = request.get_json() or {}
-    user.name = data.get('name', user.name)
-    user.email= data.get('email', user.email)
-    user.birthi_date = data.get('birth_date', user.birth_date)
-    user.gender = data.get('gender', user.gender)
-    user.avatar = data.get('avatar', user.avatar)
+    profile = UserProfile.query.get(current_uid)
+    if not profile:
+        profile = UserProfile(uid=current_uid)
+        db.session.add(profile)
+
+    if 'name' in data:
+        profile.name = data['name'].strip()
+    if 'email' in data:
+        profile.email = data['email'].lower().strip()
+    if 'birth_date' in data:
+        try:
+            profile.birth_date = datetime.fromisoformat(data['birth_date']).date()
+        except (ValueError, TypeError):
+            return jsonify({'error': 'birth_date must be YYYY-MM-DD'}), 400
+    if 'gender' in data:
+        profile.gender = data['gender']
+    if 'avatar' in data:
+        profile.avatar = data['avatar'].strip()
 
     db.session.commit()
-    return jsonify({'message': 'Profile updated successfully'}), 200
+    return jsonify({
+        'message': 'Profile updated successfully',
+        'profile': {
+            'uid': profile.uid,
+            'name': profile.name,
+            'email': profile.email,
+            'birth_date': profile.birth_date.isoformat() if profile.birth_date else None,
+            'gender': profile.gender,
+            'avatar': profile.avatar
+        }
+    }), 200

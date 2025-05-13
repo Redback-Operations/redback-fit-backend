@@ -22,6 +22,7 @@ def create_app(config_class=Config):
 
     # Initialize Firebase Admin SDK
     init_firebase_app(app)
+    print('hjiss')
 
     # Initialize Flask extensions
     db.init_app(app)
@@ -36,7 +37,8 @@ def create_app(config_class=Config):
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
     # app.register_blueprint(friends_bp, url_prefix='/api/friends')
-
+    
+    #endpoints for testing purposes
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(web_bp, url_prefix='/api/web')
 

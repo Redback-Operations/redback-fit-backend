@@ -5,7 +5,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FIREBASE_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     FIREBASE_DATABASE_URL = os.getenv('FIREBASE_DATABASE_URL')
-     # OAuth client credentials
+    FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY')
+    # OAuth client credentials
     OAUTH_CLIENT_ID     = os.getenv('OAUTH_CLIENT_ID')
     OAUTH_CLIENT_SECRET = os.getenv('OAUTH_CLIENT_SECRET')
     OAUTH_AUTHORIZE_URL = os.getenv('OAUTH_AUTHORIZE_URL')

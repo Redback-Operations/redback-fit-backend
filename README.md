@@ -103,7 +103,8 @@ redback-fit-backend/
         > 2. Select your project and click the ⚙️ **Project settings** button.  
         > 3. Switch to the **Service accounts** tab.  
         > 4. Under **Firebase Admin SDK**, click **Generate new private key**.  
-        > 5. Download the JSON file and move it into your repo’s `config/` folder, naming it `serviceAccountKey.json`.  
+        > 5. Download the JSON file and move it into your repo’s `config/` folder, naming it `serviceAccountKey.json`.
+        > 6. update GOOGLE_APPLICATION_CREDENTIALS value to relative path of the `serviceAccountyKey.json`
 
 7. Initialize the database and seed sample data:
 

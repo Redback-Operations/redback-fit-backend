@@ -1,5 +1,3 @@
-# File: app/models.py
-
 from datetime import datetime
 from app.extensions import db
 
