@@ -1,6 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from models import db
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
@@ -21,16 +19,3 @@ class UserProfile(db.Model):
             "gender": self.gender,
             "avatar": self.avatar
         }
-#Adds the default user if not already in the database
-def add_default_user():
-    user = UserProfile.query.filter_by(account='redback.operations@deakin.edu.au').first()
-    if not user:
-        default_user = UserProfile(
-            name='Austin Blaze',
-            account='redback.operations@deakin.edu.au',
-            birthDate='2000-01-01',
-            gender='Male',
-            avatar='src/assets/ProfilePic.png'
-        )
-        db.session.add(default_user)
-        db.session.commit()

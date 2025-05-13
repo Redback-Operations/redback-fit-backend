@@ -1,8 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
+from models import db
 from datetime import datetime
 
-# Initialize the db object here
-db = SQLAlchemy()
 
 class Goal(db.Model):
     __tablename__ = 'goals'

@@ -2,10 +2,15 @@ from flask import Flask, jsonify, session, render_template, request, redirect
 from flask_cors import CORS
 from api.routes import api
 from api.goals import goals_bp
-from models.goal import db
+from api.profile import api as profile_api
+from api.dashboard import dashboard_bp
+from models import db
 from dotenv import load_dotenv
 import os
 import pyrebase
+
+# Import scripts here 
+from scripts.add_default_user import add_default_user
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,9 +43,14 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+    # Call function to create the default user
+    add_default_user()
+
 # Register Blueprints
 app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
+app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+app.register_blueprint(profile_api, url_prefix='/api/profile')
 
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
