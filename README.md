@@ -50,7 +50,7 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     python scripts/create_db.py
     ```
 
-6. Run the Flask server  
+7. Run the Flask server  
     ```bash
     python app.py
     ```
