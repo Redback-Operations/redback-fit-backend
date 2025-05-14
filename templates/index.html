@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,19 +16,12 @@
             max-width: 300px;
         }
     </style>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
->>>>>>> e09403ac185dc23372347aa0d22de3eaed5f7122
 </head>
 <body>
     {% if user %}
         <h2>Welcome, {{ user }}!</h2>
         <a href="/logout">Logout</a>
     {% else %}
-<<<<<<< HEAD
         <div class="form-container">
             <h2>Login</h2>
             {% if error %}
@@ -46,25 +35,9 @@
                 <input type="password" id="password" name="password" required><br><br>
 
                 <input type="submit" value="Login">
-				
-				<p>Don't have an account? <a href="/signup">Sign up here</a></p>
-
+                <p>Don't have an account? <a href="/signup">Sign up here</a></p>
             </form>
         </div>
-=======
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
-        <form action="/" method="POST">
-            <label for="email">Email:</label>
-            <input type="text" id="email" name="email"><br><br>
-
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password"><br><br>
-
-            <input type="submit" value="Login">
-        </form>
->>>>>>> e09403ac185dc23372347aa0d22de3eaed5f7122
     {% endif %}
 </body>
 </html>
