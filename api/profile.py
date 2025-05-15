@@ -49,5 +49,3 @@ def update_profile():
     db.session.commit()  # Save changes to the database
 
     return jsonify({'message': 'Profile updated successfully'}), 200
-
-    # test change to trigger git detection
