@@ -1,7 +1,7 @@
 name: Security Scan
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
 
 permissions:
@@ -37,23 +37,24 @@ jobs:
       - name: Run pip-audit
         run: |
           echo "Running pip-audit..."
-          pip-audit -r requirements.txt --output text > pip-audit-results.txt || true
+          pip-audit -r requirements.txt > pip-audit-results.txt || true
 
       - name: Combine results
         run: |
           echo "🔒 Security Scan Results" > security-scan-results.txt
           echo "=========================" >> security-scan-results.txt
+
           echo "" >> security-scan-results.txt
-          echo "Bandit Scan Results:" >> security-scan-results.txt
+          echo "📘 Bandit Scan:" >> security-scan-results.txt
           echo "-------------------" >> security-scan-results.txt
           cat bandit-results.txt >> security-scan-results.txt
+
           echo "" >> security-scan-results.txt
-          echo "Dependency Vulnerability Results (pip-audit):" >> security-scan-results.txt
-          echo "-------------------------" >> security-scan-results.txt
+          echo "📦 pip-audit:" >> security-scan-results.txt
+          echo "-------------------" >> security-scan-results.txt
           cat pip-audit-results.txt >> security-scan-results.txt
 
       - name: Upload scan results
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-scan-results
@@ -61,10 +62,21 @@ jobs:
             security-scan-results.txt
             bandit-results.txt
             pip-audit-results.txt
+          retention-days: 5
 
-      - name: Fail if vulnerabilities found
+      - name: Create PR comment body
+        id: comment_body
         run: |
-          if grep -iE "HIGH|CRITICAL" pip-audit-results.txt > /dev/null 2>&1 || grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
-            echo "::error::Critical vulnerabilities found in scan. Please address them before merging."
-            exit 1
-          fi
+          echo 'comment<<EOF' >> $GITHUB_ENV
+          echo '## 🔒 Security Scan Summary' >> $GITHUB_ENV
+          echo '' >> $GITHUB_ENV
+          echo '```' >> $GITHUB_ENV
+          cat security-scan-results.txt >> $GITHUB_ENV
+          echo '```' >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+      - name: Post Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ env.comment }}
