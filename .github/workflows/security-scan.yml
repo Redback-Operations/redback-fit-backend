@@ -2,40 +2,28 @@ name: Security Scan
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
     branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
   issues: write
-  checks: write
-  security-events: write
-  statuses: write
 
 jobs:
   security-scan:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR
+      - name: Checkout PR Code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
-      - name: Cache pip packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -45,83 +33,44 @@ jobs:
       - name: Run Security Scan
         id: security_scan
         run: |
-          echo "Running Bandit security scan..."
+          echo "Running Bandit..."
           bandit -r . -f txt -o bandit-results.txt || true
 
+          echo "Authenticating Safety..."
+          echo "$SAFETY_API_KEY" > token.txt
+          safety auth token --api-key $(cat token.txt)
+
+          echo "Running Safety..."
           if [ -f "requirements.txt" ]; then
-            echo "Checking dependencies with Safety..."
-            safety check -r requirements.txt --output text > safety-results.txt || true
+            safety scan -r requirements.txt --output screen > safety-results.txt || true
           fi
 
+          echo "Combining Results..."
           echo "🔒 Security Scan Results" > security-scan-results.txt
           echo "=========================" >> security-scan-results.txt
+
           echo "" >> security-scan-results.txt
+          echo "Bandit Scan Results:" >> security-scan-results.txt
+          echo "-------------------" >> security-scan-results.txt
+          cat bandit-results.txt >> security-scan-results.txt
 
-          if [ -f "bandit-results.txt" ]; then
-            echo "Bandit Scan Results:" >> security-scan-results.txt
-            echo "-------------------" >> security-scan-results.txt
-            cat bandit-results.txt >> security-scan-results.txt
-            echo "" >> security-scan-results.txt
-          fi
+          echo "" >> security-scan-results.txt
+          echo "Dependency Check Results (Safety):" >> security-scan-results.txt
+          echo "-------------------------" >> security-scan-results.txt
+          cat safety-results.txt >> security-scan-results.txt
 
-          if [ -f "safety-results.txt" ]; then
-            echo "Dependency Check Results:" >> security-scan-results.txt
-            echo "-----------------------" >> security-scan-results.txt
-            cat safety-results.txt >> security-scan-results.txt
-          fi
-
-          # Output vulnerability status
+          # Set flag if vulnerabilities exist
           if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
-          elif [ -f "safety-results.txt" ] && grep -iE "critical" safety-results.txt > /dev/null 2>&1; then
+          elif grep -iE "CRITICAL" safety-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
           else
             echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
 
-      - name: Create comment body
-        id: create-comment
-        if: always()
-        run: |
-          if [ -f security-scan-results.txt ]; then
-            SCAN_RESULTS=$(cat security-scan-results.txt)
-            if [ "${{ steps.security_scan.outputs.vulnerabilities_found }}" == "true" ]; then
-              echo 'comment_body<<EOF' >> $GITHUB_ENV
-              echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo '```' >> $GITHUB_ENV
-              echo "$SCAN_RESULTS" >> $GITHUB_ENV
-              echo '```' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo '⛔️ **Critical vulnerabilities detected. Please review and address these security issues before merging.**' >> $GITHUB_ENV
-              echo 'EOF' >> $GITHUB_ENV
-            else
-              echo 'comment_body<<EOF' >> $GITHUB_ENV
-              echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo '```' >> $GITHUB_ENV
-              echo "$SCAN_RESULTS" >> $GITHUB_ENV
-              echo '```' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo '✅ **No critical security issues detected.**' >> $GITHUB_ENV
-              echo 'EOF' >> $GITHUB_ENV
-            fi
-          else
-            echo 'comment_body<<EOF' >> $GITHUB_ENV
-            echo '## 🔒 Security Scan Results' >> $GITHUB_ENV
-            echo '' >> $GITHUB_ENV
-            echo '⚠️ **Error: The security scan failed to complete. Please review the workflow logs for more information.**' >> $GITHUB_ENV
-            echo 'EOF' >> $GITHUB_ENV
-          fi
-
-      - name: Comment PR
-        uses: peter-evans/create-or-update-comment@v4
-        if: always()
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ env.comment_body }}
-
-      - name: Upload scan artifacts
+      - name: Upload scan results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -135,5 +84,5 @@ jobs:
       - name: Fail if vulnerabilities found
         if: steps.security_scan.outputs.vulnerabilities_found == 'true'
         run: |
-          echo "::error::Critical security vulnerabilities were detected. Please review the findings and address them before merging."
+          echo "::error::Critical vulnerabilities found in scan. Please address them before merging."
           exit 1
