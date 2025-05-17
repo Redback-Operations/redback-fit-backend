@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR code
+      - name: Checkout PR Code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
