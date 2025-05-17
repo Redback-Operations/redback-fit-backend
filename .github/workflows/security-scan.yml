@@ -38,14 +38,16 @@ jobs:
           echo "Running Bandit..."
           bandit -r . -f txt -o bandit-results.txt || true
 
-          echo "$SAFETY_API_KEY" | safety auth login --api-key-stdin
-
+          echo "Running Safety..."
+          if [ -f "requirements.txt" ]; then
+            safety scan -r requirements.txt --key "$SAFETY_API_KEY" --output screen > safety-results.txt || true
+          fi
 
           echo "Combining Results..."
           echo "🔒 Security Scan Results" > security-scan-results.txt
           echo "=========================" >> security-scan-results.txt
-
           echo "" >> security-scan-results.txt
+
           echo "Bandit Scan Results:" >> security-scan-results.txt
           echo "-------------------" >> security-scan-results.txt
           cat bandit-results.txt >> security-scan-results.txt
@@ -55,10 +57,9 @@ jobs:
           echo "-------------------------" >> security-scan-results.txt
           cat safety-results.txt >> security-scan-results.txt
 
-          # Set flag if vulnerabilities exist
           if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
-          elif grep -iE "CRITICAL" safety-results.txt > /dev/null 2>&1; then
+          elif grep -iE "CRITICAL|HIGH" safety-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
           else
             echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
