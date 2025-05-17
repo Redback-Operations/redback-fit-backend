@@ -32,36 +32,32 @@ jobs:
 
       - name: Run Security Scan
         id: security_scan
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
         run: |
           echo "Running Bandit..."
           bandit -r . -f txt -o bandit-results.txt || true
 
-          echo "Authenticating Safety..."
-          echo "${SAFETY_API_KEY}" > token.txt
-          safety auth token --api-key $(cat token.txt)
-
           echo "Running Safety..."
           if [ -f "requirements.txt" ]; then
             safety scan -r requirements.txt --output screen > safety-results.txt || true
-          else
-            echo "No requirements.txt found." > safety-results.txt
           fi
 
           echo "Combining Results..."
-          {
-            echo "🔒 Security Scan Results"
-            echo "========================="
-            echo ""
-            echo "Bandit Scan Results:"
-            echo "-------------------"
-            cat bandit-results.txt
-            echo ""
-            echo "Dependency Check Results (Safety):"
-            echo "-------------------------"
-            cat safety-results.txt
-          } > security-scan-results.txt
+          echo "🔒 Security Scan Results" > security-scan-results.txt
+          echo "=========================" >> security-scan-results.txt
 
-          echo "Checking for critical vulnerabilities..."
+          echo "" >> security-scan-results.txt
+          echo "Bandit Scan Results:" >> security-scan-results.txt
+          echo "-------------------" >> security-scan-results.txt
+          cat bandit-results.txt >> security-scan-results.txt
+
+          echo "" >> security-scan-results.txt
+          echo "Dependency Check Results (Safety):" >> security-scan-results.txt
+          echo "-------------------------" >> security-scan-results.txt
+          cat safety-results.txt >> security-scan-results.txt
+
+          # Set flag if vulnerabilities exist
           if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
           elif grep -iE "CRITICAL" safety-results.txt > /dev/null 2>&1; then
@@ -69,8 +65,6 @@ jobs:
           else
             echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
 
       - name: Upload scan results
         if: always()
