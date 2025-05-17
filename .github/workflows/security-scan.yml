@@ -1,83 +1,32 @@
-name: Security Scan
+- name: Run Security Scan
+  id: security_scan
+  run: |
+    echo "Running Bandit..."
+    bandit -r . -f txt -o bandit-results.txt || true
 
-on:
-  pull_request_target:
-    branches: [main]
+    echo "Running Safety..."
+    if [ -f "requirements.txt" ]; then
+      safety check -r requirements.txt --output text > safety-results.txt || true
+    fi
 
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
+    echo "Combining Results..."
+    echo "🔒 Security Scan Results" > security-scan-results.txt
+    echo "=========================" >> security-scan-results.txt
+    echo "" >> security-scan-results.txt
 
-jobs:
-  security-scan:
-    runs-on: ubuntu-latest
+    echo "Bandit Scan Results:" >> security-scan-results.txt
+    echo "-------------------" >> security-scan-results.txt
+    cat bandit-results.txt >> security-scan-results.txt
 
-    steps:
-      - name: Checkout PR Code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
+    echo "" >> security-scan-results.txt
+    echo "Dependency Check Results (Safety):" >> security-scan-results.txt
+    echo "-------------------------" >> security-scan-results.txt
+    cat safety-results.txt >> security-scan-results.txt
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit safety
-
-      - name: Run Security Scan
-        id: security_scan
-        env:
-          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
-        run: |
-          echo "Running Bandit..."
-          bandit -r . -f txt -o bandit-results.txt || true
-
-          echo "Running Safety..."
-          if [ -f "requirements.txt" ]; then
-            safety scan -r requirements.txt --key "$SAFETY_API_KEY" --output screen > safety-results.txt || true
-          fi
-
-          echo "Combining Results..."
-          echo "🔒 Security Scan Results" > security-scan-results.txt
-          echo "=========================" >> security-scan-results.txt
-          echo "" >> security-scan-results.txt
-
-          echo "Bandit Scan Results:" >> security-scan-results.txt
-          echo "-------------------" >> security-scan-results.txt
-          cat bandit-results.txt >> security-scan-results.txt
-
-          echo "" >> security-scan-results.txt
-          echo "Dependency Check Results (Safety):" >> security-scan-results.txt
-          echo "-------------------------" >> security-scan-results.txt
-          cat safety-results.txt >> security-scan-results.txt
-
-          if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
-            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
-          elif grep -iE "CRITICAL|HIGH" safety-results.txt > /dev/null 2>&1; then
-            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
-          else
-            echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload scan results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-scan-results
-          path: |
-            security-scan-results.txt
-            bandit-results.txt
-            safety-results.txt
-          retention-days: 5
-
-      - name: Fail if vulnerabilities found
-        if: steps.security_scan.outputs.vulnerabilities_found == 'true'
-        run: |
-          echo "::error::Critical vulnerabilities found in scan. Please address them before merging."
-          exit 1
+    if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
+      echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
+    elif grep -iE "CRITICAL|HIGH" safety-results.txt > /dev/null 2>&1; then
+      echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
+    else
+      echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
+    fi
