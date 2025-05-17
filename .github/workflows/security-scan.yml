@@ -7,14 +7,13 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  issues: write
 
 jobs:
   security-scan:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR Code
+      - name: Checkout PR code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -30,39 +29,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install bandit pip-audit
 
-      - name: Run Security Scan
-        id: security_scan
+      - name: Run Bandit
         run: |
           echo "Running Bandit..."
           bandit -r . -f txt -o bandit-results.txt || true
 
+      - name: Run pip-audit
+        run: |
           echo "Running pip-audit..."
-          if [ -f "requirements.txt" ]; then
-            pip-audit -r requirements.txt > pip-audit-results.txt || true
-          else
-            echo "No requirements.txt found. Skipping pip-audit." > pip-audit-results.txt
-          fi
+          pip-audit -r requirements.txt --output text > pip-audit-results.txt || true
 
-          echo "Combining Results..."
+      - name: Combine results
+        run: |
           echo "🔒 Security Scan Results" > security-scan-results.txt
           echo "=========================" >> security-scan-results.txt
           echo "" >> security-scan-results.txt
-
           echo "Bandit Scan Results:" >> security-scan-results.txt
           echo "-------------------" >> security-scan-results.txt
           cat bandit-results.txt >> security-scan-results.txt
-
           echo "" >> security-scan-results.txt
-          echo "Dependency Check Results (pip-audit):" >> security-scan-results.txt
+          echo "Dependency Vulnerability Results (pip-audit):" >> security-scan-results.txt
           echo "-------------------------" >> security-scan-results.txt
           cat pip-audit-results.txt >> security-scan-results.txt
-
-          # Check for critical/high issues
-          if grep -iE "CRITICAL|HIGH" pip-audit-results.txt > /dev/null 2>&1 || grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
-            echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
-          else
-            echo "vulnerabilities_found=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Upload scan results
         if: always()
@@ -73,10 +61,10 @@ jobs:
             security-scan-results.txt
             bandit-results.txt
             pip-audit-results.txt
-          retention-days: 5
 
       - name: Fail if vulnerabilities found
-        if: steps.security_scan.outputs.vulnerabilities_found == 'true'
         run: |
-          echo "::error::Critical vulnerabilities found in scan. Please address them before merging."
-          exit 1
+          if grep -iE "HIGH|CRITICAL" pip-audit-results.txt > /dev/null 2>&1 || grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
+            echo "::error::Critical vulnerabilities found in scan. Please address them before merging."
+            exit 1
+          fi
