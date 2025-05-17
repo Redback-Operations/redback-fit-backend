@@ -16,14 +16,14 @@ permissions:
 jobs:
   security-scan:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout PR
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -45,36 +45,33 @@ jobs:
       - name: Run Security Scan
         id: security_scan
         run: |
-          # Run bandit recursively on all Python files
           echo "Running Bandit security scan..."
           bandit -r . -f txt -o bandit-results.txt || true
-          
-          # Run Safety check on requirements
+
           if [ -f "requirements.txt" ]; then
             echo "Checking dependencies with Safety..."
-            safety scan -r requirements.txt --output text > safety-results.txt || true
+            safety check -r requirements.txt --output text > safety-results.txt || true
           fi
-          
-          # Combine results
+
           echo "🔒 Security Scan Results" > security-scan-results.txt
           echo "=========================" >> security-scan-results.txt
           echo "" >> security-scan-results.txt
-          
+
           if [ -f "bandit-results.txt" ]; then
             echo "Bandit Scan Results:" >> security-scan-results.txt
             echo "-------------------" >> security-scan-results.txt
             cat bandit-results.txt >> security-scan-results.txt
             echo "" >> security-scan-results.txt
           fi
-          
+
           if [ -f "safety-results.txt" ]; then
             echo "Dependency Check Results:" >> security-scan-results.txt
             echo "-----------------------" >> security-scan-results.txt
             cat safety-results.txt >> security-scan-results.txt
           fi
-          
-          # Check for critical issues
-          if grep -iE "Severity\:\ High|Severity\:\ Critical" bandit-results.txt > /dev/null 2>&1; then
+
+          # Output vulnerability status
+          if grep -iE "Severity: High|Severity: Critical" bandit-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
           elif [ -f "safety-results.txt" ] && grep -iE "critical" safety-results.txt > /dev/null 2>&1; then
             echo "vulnerabilities_found=true" >> $GITHUB_OUTPUT
@@ -97,9 +94,6 @@ jobs:
               echo '```' >> $GITHUB_ENV
               echo '' >> $GITHUB_ENV
               echo '⛔️ **Critical vulnerabilities detected. Please review and address these security issues before merging.**' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo '### Next Steps:' >> $GITHUB_ENV
-              echo '1. Review each critical finding above and fix them according to OWASP top 10 mitigations.' >> $GITHUB_ENV
               echo 'EOF' >> $GITHUB_ENV
             else
               echo 'comment_body<<EOF' >> $GITHUB_ENV
@@ -110,8 +104,6 @@ jobs:
               echo '```' >> $GITHUB_ENV
               echo '' >> $GITHUB_ENV
               echo '✅ **No critical security issues detected.**' >> $GITHUB_ENV
-              echo '' >> $GITHUB_ENV
-              echo 'The code has passed all critical security checks.' >> $GITHUB_ENV
               echo 'EOF' >> $GITHUB_ENV
             fi
           else
