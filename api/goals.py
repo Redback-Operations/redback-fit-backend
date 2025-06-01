@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models.goal import db, Goal  # Correctly import db and Goal
 from datetime import datetime
+from sqlalchemy import and_, or_
 
 # Create the Blueprint for goals
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
@@ -114,3 +115,38 @@ def delete_goal(goal_id):
     
     # Return a 204 status code (no content)
     return '', 204
+
+#adding new endpoint (/similar)
+
+@goals_bp.route('/similar', methods=['POST'])
+def similar_goals():
+    data = request.get_json()
+
+    required_fields = [
+        'steps', 'minutes_running', 'minutes_cycling',
+        'minutes_swimming', 'minutes_exercise', 'calories'
+    ]
+
+    # Validate input
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"{field} is required"}), 400
+
+    # Set tolerance for matching (10%)
+    tolerance = 0.1  
+
+    # Define filters to find similar goals within ±10% tolerance
+    filters = [
+        Goal.steps.between(data['steps'] * (1 - tolerance), data['steps'] * (1 + tolerance)),
+        Goal.minutes_running.between(data['minutes_running'] * (1 - tolerance), data['minutes_running'] * (1 + tolerance)),
+        Goal.minutes_cycling.between(data['minutes_cycling'] * (1 - tolerance), data['minutes_cycling'] * (1 + tolerance)),
+        Goal.minutes_swimming.between(data['minutes_swimming'] * (1 - tolerance), data['minutes_swimming'] * (1 + tolerance)),
+        Goal.minutes_exercise.between(data['minutes_exercise'] * (1 - tolerance), data['minutes_exercise'] * (1 + tolerance)),
+        Goal.calories.between(data['calories'] * (1 - tolerance), data['calories'] * (1 + tolerance)),
+    ]
+
+    similar_goals = Goal.query.filter(
+        and_(*filters)
+    ).order_by(Goal.created_at.desc()).limit(10).all()
+
+    return jsonify([g.as_dict() for g in similar_goals]), 200
