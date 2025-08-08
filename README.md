@@ -54,7 +54,8 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     ```bash
     python app.py
     ```
+    The database will be automatically created and initialised on first run found in /instance.
+
 Once running, the backend will be available at:  
 `http://localhost:5000`
 
-The Environment used in the backend are available for reference in the .env.example file located inside the Backend folder.
