@@ -4,6 +4,8 @@ from api.routes import api
 from api.goals import goals_bp
 from api.profile import api as profile_api
 from api.dashboard import dashboard_bp
+from api.body_insight import body_insight_bp
+from api.activity import activity_bp
 from models import db
 from dotenv import load_dotenv
 import os
@@ -35,7 +37,7 @@ auth = firebase.auth()
 
 # Flask config
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///goals.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///reflexionpro_backend.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
@@ -51,6 +53,8 @@ app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(body_insight_bp, url_prefix='/api/body_insight')
+app.register_blueprint(activity_bp, url_prefix='/api/activity')
 
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
