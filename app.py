@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, session, render_template, request, redirect
+from flask_migrate import Migrate
 from flask_cors import CORS
 from api.routes import api
 from api.goals import goals_bp
@@ -6,17 +7,37 @@ from api.profile import api as profile_api
 from api.dashboard import dashboard_bp
 from models import db
 from dotenv import load_dotenv
+from api.sync import sync_bp
+from logging.handlers import RotatingFileHandler
+import logging
 import os
 import pyrebase
 
 # Import scripts here 
 from scripts.add_default_user import add_default_user
 
+# ensure a folder for logs exists
+os.makedirs('logs', exist_ok=True)
+
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+
+
+# set up a rotating file handler
+file_handler = RotatingFileHandler(
+    'logs/app.log', maxBytes=10*1024, backupCount=5
+)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s in %(module)s: %(message)s'
+))
+file_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info("🟢 App startup complete")
 
 # Firebase configuration
 config = {
@@ -40,6 +61,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db.init_app(app)
+migrate = Migrate(app, db)
+
 with app.app_context():
     db.create_all()
 
@@ -51,6 +74,7 @@ app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(sync_bp, url_prefix='/api/synced')
 
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])

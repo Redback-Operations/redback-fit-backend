@@ -1,4 +1,5 @@
 from models import db
+from datetime import datetime, timezone
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
@@ -9,6 +10,8 @@ class UserProfile(db.Model):
     birthDate = db.Column(db.String(10), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
     avatar = db.Column(db.String(200), nullable=True)
+    last_synced = db.Column(db.DateTime, nullable=True)
+
 
     def as_dict(self):
         return {
@@ -17,5 +20,6 @@ class UserProfile(db.Model):
             "account": self.account,
             "birthDate": self.birthDate,
             "gender": self.gender,
-            "avatar": self.avatar
+            "avatar": self.avatar,
+            "last_sync": self.last_synced.isoformat() if self.last_synced else None
         }
