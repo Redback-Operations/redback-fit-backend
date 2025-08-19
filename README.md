@@ -45,12 +45,7 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     pip install -r requirements.txt
     ```
 
-6. Initialize Database  
-    ```bash
-    python scripts/create_db.py
-    ```
-
-7. Run the Flask server  
+6. Run the Flask server  
     ```bash
     python app.py
     ```
