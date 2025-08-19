@@ -6,6 +6,8 @@ from api.profile import api as profile_api
 from api.dashboard import dashboard_bp
 from models import db
 from dotenv import load_dotenv
+from api.privacy_demo import bp as privacy_demo_bp
+
 import os
 import pyrebase
 
@@ -51,6 +53,8 @@ app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+
+app.register_blueprint(privacy_demo_bp)
 
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
