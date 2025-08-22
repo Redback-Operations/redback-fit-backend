@@ -10,8 +10,8 @@ class UserProfile(db.Model):
     birthDate = db.Column(db.String(10), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
     avatar = db.Column(db.String(200), nullable=True)
-    last_synced = db.Column(db.DateTime, nullable=True)
-
+    height = db.Column(db.Float, nullable=True)  # Height in cm or m
+    weight = db.Column(db.Float, nullable=True)  # Weight in kg
 
     def as_dict(self):
         return {
@@ -21,5 +21,6 @@ class UserProfile(db.Model):
             "birthDate": self.birthDate,
             "gender": self.gender,
             "avatar": self.avatar,
-            "last_sync": self.last_synced.isoformat() if self.last_synced else None
+            "height": self.height,
+            "weight": self.weight
         }
