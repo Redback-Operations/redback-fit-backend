@@ -1,12 +1,11 @@
 from models import db
 from datetime import datetime
 
-
 class Goal(db.Model):
     __tablename__ = 'goals'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)  # Link to OAuth user later
+    user_id = db.Column(db.Integer, db.ForeignKey('user_profile.id'), nullable=False) # Link to OAuth user later
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     steps = db.Column(db.Integer, default=0)
@@ -15,7 +14,7 @@ class Goal(db.Model):
     minutes_swimming = db.Column(db.Integer, default=0)
     minutes_exercise = db.Column(db.Integer, default=0)
     calories = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def as_dict(self):
         return {

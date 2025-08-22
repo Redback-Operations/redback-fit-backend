@@ -45,16 +45,12 @@ Backend API for Redback Project 3 (Wearables for athletes), built with Python an
     pip install -r requirements.txt
     ```
 
-6. Initialize Database  
-    ```bash
-    python scripts/create_db.py
-    ```
-
-7. Run the Flask server  
+6. Run the Flask server  
     ```bash
     python app.py
     ```
+    The database will be automatically created and initialised on first run found in /instance.
+
 Once running, the backend will be available at:  
 `http://localhost:5000`
 
-The Environment used in the backend are available for reference in the .env.example file located inside the Backend folder.
