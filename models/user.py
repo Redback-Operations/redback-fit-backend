@@ -1,4 +1,5 @@
 from models import db
+from datetime import datetime, timezone
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
