@@ -11,6 +11,7 @@ class Activity(db.Model):
     begin_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     activity_type = db.Column(db.String(50), nullable=False)
+    coach = db.Column(db.String(100), nullable=True)
     average_speed = db.Column(db.Float, nullable=False)
     max_speed = db.Column(db.Float, nullable=False)
     average_heart_rate = db.Column(db.Integer, nullable=False)
@@ -24,6 +25,8 @@ class Activity(db.Model):
     elevation_loss = db.Column(db.Float, nullable=False)
     max_elevation = db.Column(db.Float, nullable=False)
     min_elevation = db.Column(db.Float, nullable=False)
+    
+
 
     time_series = db.relationship('ActivityTimeSeries', backref='activity', cascade="all, delete-orphan")
 
@@ -34,6 +37,7 @@ class Activity(db.Model):
             "begin_time": self.begin_time.isoformat(),
             "end_time": self.end_time.isoformat(),
             "activity_type": self.activity_type,
+            "coach": self.coach,
             "average_speed": self.average_speed,
             "max_speed": self.max_speed,
             "average_heart_rate": self.average_heart_rate,
