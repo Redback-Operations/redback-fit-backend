@@ -1,5 +1,23 @@
 *.pyc
 __pycache__/
-env/
-.env
 .ipynb_checkpoints/
+
+
+# Secrets
+.env
+.flaskenv
+
+# Virutal Environments
+/venv/
+env/
+.venv/
+
+# Local Database
+my_database.db
+
+# Logs
+*.logs
+logs/
+
+migrations/__pycache__/
+migrations/versions/__pycache__/
