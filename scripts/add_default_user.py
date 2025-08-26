@@ -1,5 +1,5 @@
 from models import db
-from models.user import UserProfile
+from models import UserProfile
 
 def add_default_user():
     # Only add a default user if the user_profile table is completely empty
