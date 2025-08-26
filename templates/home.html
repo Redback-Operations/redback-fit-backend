@@ -1,18 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Home</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-        }
-    </style>
-</head>
-<body>
-    <h2>Welcome, {{ user }}!</h2>
-    <p>You have successfully logged in.</p>
-    <a href="/logout">Logout</a>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="card">
+  {% if current_user.profile %}
+    <h2>Welcome, {{ current_user.profile.name }}!</h2>
+  {% else %}
+    <h2>Welcome, {{ current_user.email }}!</h2>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.logout') }}">
+    <button type="submit">Log out</button>
+  </form>
+</div>
+{% endblock %}
