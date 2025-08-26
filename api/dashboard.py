@@ -5,7 +5,7 @@
 import sys
 
 from flask import Blueprint, jsonify
-from models.user import db, UserProfile
+from models import db, UserProfile
 from flask_cors import CORS
 from datetime import datetime, timezone
 

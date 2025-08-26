@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models.goal import db, Goal  # Correctly import db and Goal
+from models import db, Goal  # Correctly import db and Goal
 from datetime import datetime
 
 # Create the Blueprint for goals

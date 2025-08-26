@@ -1,6 +1,6 @@
 # /api/profile.py
 from flask import Blueprint, jsonify, request
-from models.user import db, UserProfile
+from models import db, UserProfile
 from flask_cors import CORS
 
 api = Blueprint('profile_api', __name__)
