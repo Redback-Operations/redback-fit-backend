@@ -1,13 +1,17 @@
-from flask import Flask, jsonify, session, render_template, request, redirect
+from flask import Flask, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
+from flask_migrate import Migrate
+from flask_login import LoginManager, login_required
+from dotenv import load_dotenv
+import os
+
+# Local imports
+from models import db, UserCredential
 from api.routes import api
 from api.goals import goals_bp
 from api.profile import api as profile_api
 from api.dashboard import dashboard_bp
-from models import db
-from dotenv import load_dotenv
-import os
-import pyrebase
+from auth.routes import auth_bp
 
 # Import scripts here 
 from scripts.add_default_user import add_default_user
@@ -15,94 +19,68 @@ from scripts.add_default_user import add_default_user
 # Load environment variables from .env file
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+login_manager = LoginManager()
+login_manager.login_view = "auth.login"
 
-# Firebase configuration
-config = {
-    'apiKey': os.getenv('FIREBASE_API_KEY'),
-    'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
-    'projectId': os.getenv('FIREBASE_PROJECT_ID'),
-    'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
-    'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
-    'appId': os.getenv('FIREBASE_APP_ID'),
-    'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID'),
-    'databaseURL': os.getenv('FIREBASE_DATABASE_URL')
-}
+@login_manager.user_loader
+def load_user(user_id: str):
+    try:
+        return db.session.get(UserCredential, int(user_id))
+    except (TypeError, ValueError):
+        return None 
 
-firebase = pyrebase.initialize_app(config)
-auth = firebase.auth()
+def create_app():
+    app = Flask(__name__)
 
-# Flask config
-app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///goals.db")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Flask config (Core)
+    app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///goals.db")
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize database
-db.init_app(app)
-with app.app_context():
-    db.create_all()
+    # Initialize database
+    db.init_app(app)
+    login_manager.init_app(app)
+    Migrate(app, db)
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "http://localhost:5173")}},
+        supports_credentials=True,
+    )
 
-    # Call function to create the default user
-    add_default_user()
+    # Register Blueprints
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(api, url_prefix='/api')
+    app.register_blueprint(goals_bp, url_prefix='/api/goals')
+    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+    app.register_blueprint(profile_api, url_prefix='/api/profile')
 
-# Register Blueprints
-app.register_blueprint(api, url_prefix='/api')
-app.register_blueprint(goals_bp, url_prefix='/api/goals')
-app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-app.register_blueprint(profile_api, url_prefix='/api/profile')
+    # Routes
+    @app.route('/')
+    def index():
+        # send to login if not logged in
+        return redirect(url_for('auth.login'))
+    
+    @app.route('/home')
+    @login_required
+    def home():
+        return render_template('home.html', user=session.get('user_id'))
 
-# Main index route (login + welcome)
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    error = None
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        try:
-            user = auth.sign_in_with_email_and_password(email, password)
-            session['user'] = email
-            return redirect('/home')
-        except:
-            error = "Login failed. Please check your credentials."
+    # Example API route
+    @app.route('/api/hello', methods=['GET'])
+    def hello():
+        return jsonify({'message': 'Hello from Flask!'}), 200
 
-    return render_template('index.html', user=session.get('user'), error=error)
+    # Create database tables if they don't exist
+    with app.app_context():
+        db.create_all()
 
-# Signup route
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    error = None
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        try:
-            auth.create_user_with_email_and_password(email, password)
-            session['user'] = email
-            return redirect('/home')
-        except Exception as e:
-            error = "Signup failed. " + str(e).split("]")[-1].strip().strip('"')
+    return app
 
-    return render_template('signup.html', error=error)
-
-# Logout route
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/')
-
-@app.route('/home')
-def home():
-    if 'user' in session:
-        return render_template('home.html', user=session['user'])
-    return redirect('/')
-
-# Example API route
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify({'message': 'Hello from Flask!'}), 200
 
 if __name__ == '__main__':
+    app = create_app()
     debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
-    app.run(debug=debug_mode, port=int(os.getenv("PORT", 5000)))
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=debug_mode, port=port)
 
 
