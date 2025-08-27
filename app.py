@@ -2,6 +2,8 @@ from flask import Flask, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_required
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 import os
 
@@ -23,8 +25,10 @@ csrf = CSRFProtect()
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize Flask extensions
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per hour"])
 
 @login_manager.user_loader
 def load_user(user_id: str):
@@ -42,9 +46,20 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config["WTF_CSRF_ENABLED"] = True
 
+    # Security settings for cookies
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=True,  
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SECURE=True, 
+    )
+
+
     # Initialize database
     db.init_app(app)
     login_manager.init_app(app)
+    limiter.init_app(app)
     Migrate(app, db)
     CORS(
         app,

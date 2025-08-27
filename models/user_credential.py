@@ -11,7 +11,7 @@ class UserCredential(db.Model, UserMixin):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at =db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
-    profile = db.relationship("UserProfile", back_populates="user", uselist=False)
+    profile = db.relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def set_password(self, raw_password: str):
         self.password_hash = generate_password_hash(raw_password)

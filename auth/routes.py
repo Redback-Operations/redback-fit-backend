@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_user, logout_user, login_required
 from models import db, UserCredential, UserProfile
+from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -46,6 +47,7 @@ def signup():
     return render_template('signup.html', error=error)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute") # Rate limiting to prevent brute-force attacks
 def login():
     error = None
     if request.method == 'POST':
