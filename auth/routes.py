@@ -80,7 +80,7 @@ def signup():
     return render_template('signup.html', error=error)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute") # Rate limiting to prevent brute-force attacks
+@limiter.limit("5 per minute", methods=['POST'], per_method=True) # Rate limiting to prevent brute-force attacks
 def login():
     error = None
     if request.method == 'POST':
@@ -102,7 +102,7 @@ def login():
 
     return render_template('login.html', error=None)
 
-@auth_bp.route('/logout', methods=['GET','POST'])
+@auth_bp.route('/logout', methods=['GET'])
 @login_required
 def logout():
     logout_user()

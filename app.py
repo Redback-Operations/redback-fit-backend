@@ -3,6 +3,7 @@ from flask import Flask, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
 from flask_login import login_required, current_user
 from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFError
 
 # Local imports
 from models import UserCredential
@@ -22,15 +23,16 @@ load_dotenv()
 
 login_manager.login_view = "auth.login"
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect(url_for('auth.login'))
+
 @login_manager.user_loader
 def load_user(user_id: str):
     try:
         return db.session.get(UserCredential, int(user_id))
     except (TypeError, ValueError):
         return None 
-    
-def unauthorized():
-    return redirect(url_for('auth.login'))
 
 def create_app():
     app = Flask(__name__)
@@ -72,6 +74,10 @@ def create_app():
     app.register_blueprint(goals_bp, url_prefix='/api/goals')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(profile_api, url_prefix='/api/profile')
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        return f"CSRF failed: {e.description}", 400
 
     # Routes
     @app.route('/')

@@ -10,8 +10,6 @@
     <h2>Welcome, {{ current_user.email }}!</h2>
   {% endif %}
 
-  <form method="post" action="{{ url_for('auth.logout') }}">
-    <button type="submit">Log out</button>
-  </form>
+  <a href="{{ url_for('auth.logout') }}">Logout</a>
 </div>
 {% endblock %}
