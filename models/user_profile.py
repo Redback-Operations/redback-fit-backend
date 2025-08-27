@@ -11,7 +11,7 @@ class UserProfile(db.Model):
     name = db.Column(db.String(100), nullable=False)
     account = db.Column(db.String(100), unique=True, nullable=False)
     birthDate = db.Column(db.String(10), nullable=False)
-    gender = db.Column(db.String(10), nullable=False)
+    gender = db.Column(db.String(10), nullable=True, server_default="---")
     avatar = db.Column(db.String(200), nullable=True)
 
 

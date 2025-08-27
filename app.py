@@ -20,6 +20,7 @@ from scripts.add_default_user import add_default_user
 # Load environment variables from .env file
 load_dotenv()
 
+login_manager.login_view = "auth.login"
 
 @login_manager.user_loader
 def load_user(user_id: str):
@@ -27,6 +28,9 @@ def load_user(user_id: str):
         return db.session.get(UserCredential, int(user_id))
     except (TypeError, ValueError):
         return None 
+    
+def unauthorized():
+    return redirect(url_for('auth.login'))
 
 def create_app():
     app = Flask(__name__)

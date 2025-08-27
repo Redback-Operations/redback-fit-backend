@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urljoin
 from extensions import db, limiter 
 from sqlalchemy.exc import IntegrityError
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, template_folder='templates')
 
 def validate_password(pwd: str):
     if len(pwd) < 8:
@@ -87,20 +87,22 @@ def login():
         email = request.form.get('email').strip().lower()
         password = request.form.get('password')
         next_page = request.args.get('next') or request.form.get('next')
-        user = UserCredential.query.filter_by(email=email).first()
         remember = bool(request.form.get('remember'))
 
+        # Loopkup user
+        user = UserCredential.query.filter_by(email=email).first()
+
+        #Auth check
         if user and user.check_password(password):
             login_user(user, remember=remember)
             dest = next_page if is_safe_url(next_page) else url_for("home")
             return redirect(dest)
         else:
-            error = "Invalid email or password."
-            return render_template('login.html', error=error), 400
+            return "Login failed. Incorrect email or password.", 400
 
-    return render_template('login.html', error=error)
+    return render_template('login.html', error=None)
 
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['GET','POST'])
 @login_required
 def logout():
     logout_user()
