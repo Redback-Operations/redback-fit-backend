@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
+from extensions import db
 
-db = SQLAlchemy()
 
 from .user_credential import UserCredential
 from .user_profile import UserProfile

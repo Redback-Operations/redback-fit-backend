@@ -1,14 +1,12 @@
+import os
 from flask import Flask, jsonify, session, render_template, redirect, url_for
 from flask_cors import CORS
-from flask_migrate import Migrate
-from flask_login import LoginManager, login_required
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask_login import login_required, current_user
 from dotenv import load_dotenv
-import os
 
 # Local imports
-from models import db, UserCredential
+from models import UserCredential
+from extensions import db, login_manager, migrate, limiter, csrf
 from api.routes import api
 from api.goals import goals_bp
 from api.profile import api as profile_api
@@ -18,17 +16,10 @@ from auth.routes import auth_bp
 # Import scripts here 
 from scripts.add_default_user import add_default_user
 
-# CSRF protection
-from flask_wtf.csrf import CSRFProtect
-csrf = CSRFProtect()
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Initialize Flask extensions
-login_manager = LoginManager()
-login_manager.login_view = "auth.login"
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per hour"])
 
 @login_manager.user_loader
 def load_user(user_id: str):
@@ -50,22 +41,26 @@ def create_app():
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=True,  
+        SESSION_COOKIE_SECURE=False,  
         REMEMBER_COOKIE_HTTPONLY=True,
-        REMEMBER_COOKIE_SECURE=True, 
+        REMEMBER_COOKIE_SECURE=False, 
     )
 
 
     # Initialize database
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
-    limiter.init_app(app)
-    Migrate(app, db)
+    if limiter:
+        limiter.init_app(app)
+    csrf.init_app(app)
     CORS(
         app,
         resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "http://localhost:5173")}},
         supports_credentials=True,
     )
+
+    app.cli.add_command(add_default_user)
 
     # Register Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -83,7 +78,7 @@ def create_app():
     @app.route('/home')
     @login_required
     def home():
-        return render_template('home.html', user=session.get('user_id'))
+        return render_template('home.html', user=current_user)
 
     # Example API route
     @app.route('/api/hello', methods=['GET'])
@@ -93,8 +88,6 @@ def create_app():
     # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
-        add_default_user(db)
-        csrf.init_app(app)
 
     return app
 

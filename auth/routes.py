@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_user, logout_user, login_required
-from models import db, UserCredential, UserProfile
-from app import limiter
+from models import UserCredential, UserProfile
+from urllib.parse import urlparse, urljoin
+from extensions import db, limiter 
+from sqlalchemy.exc import IntegrityError
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -11,6 +13,13 @@ def validate_password(pwd: str):
     if pwd.isdigit() or pwd.isalpha():
         raise ValueError("Password must contain both letters and numbers.")
     return True
+
+def is_safe_url(target: str) -> bool:
+    if not target:
+        return False
+    ref = urlparse(request.host_url)
+    test = urlparse(urljoin(request.host_url, target))
+    return test.scheme in ('http', 'https') and ref.netloc == test.netloc
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -24,15 +33,13 @@ def signup():
             # Validate inputs
             if not name or not email or not password:
                 raise ValueError("Name, email and password are required.")
+            validate_password(password)
             
             # Check if email already exists
             if UserCredential.query.filter_by(email=email).first():
-                raise ValueError("Email already registered.")   
+                error = "signup failed. email already registered."
+                return render_template('signup.html', error=error), 400  
             
-            # Validate password strength
-            error_msg = validate_password(password)
-            if error_msg:
-                raise ValueError(error_msg)
             
             # Create user credentials
             new_user = UserCredential(email=email)
@@ -55,8 +62,20 @@ def signup():
             login_user(new_user)
             return redirect(url_for("home"))
         
+        except ValueError as e:
+            db.session.rollback()
+            error = "Signup failed. " + str(e) 
+            return render_template('signup.html', error=error), 400
+        
+        except IntegrityError:
+            db.session.rollback()
+            error = "signup failed. email already registered."
+            return render_template('signup.html', error=error), 400
+        
         except Exception as e:
+            db.session.rollback()
             error = "Signup failed. "+ str(e)
+            return render_template('signup.html', error=error), 400
 
     return render_template('signup.html', error=error)
 
@@ -67,15 +86,17 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email').strip().lower()
         password = request.form.get('password')
+        next_page = request.args.get('next') or request.form.get('next')
         user = UserCredential.query.filter_by(email=email).first()
         remember = bool(request.form.get('remember'))
 
         if user and user.check_password(password):
             login_user(user, remember=remember)
-            next_page = request.args.get('next')
-            return redirect(next_page or url_for("home"))
+            dest = next_page if is_safe_url(next_page) else url_for("home")
+            return redirect(dest)
         else:
             error = "Invalid email or password."
+            return render_template('login.html', error=error), 400
 
     return render_template('login.html', error=error)
 

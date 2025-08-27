@@ -1,4 +1,4 @@
-from models import db
+from extensions import db
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
