@@ -52,8 +52,10 @@ def login():
         email = request.form.get('email').strip().lower()
         password = request.form.get('password')
         user = UserCredential.query.filter_by(email=email).first()
+        remember = bool(request.form.get('remember'))
+
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=remember)
             next_page = request.args.get('next')
             return redirect(next_page or url_for("home"))
         else:

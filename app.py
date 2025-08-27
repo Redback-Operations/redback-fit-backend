@@ -16,6 +16,10 @@ from auth.routes import auth_bp
 # Import scripts here 
 from scripts.add_default_user import add_default_user
 
+# CSRF protection
+from flask_wtf.csrf import CSRFProtect
+csrf = CSRFProtect()
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -33,9 +37,10 @@ def create_app():
     app = Flask(__name__)
 
     # Flask config (Core)
-    app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///goals.db")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config["WTF_CSRF_ENABLED"] = True
 
     # Initialize database
     db.init_app(app)
@@ -73,6 +78,8 @@ def create_app():
     # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
+        add_default_user(db)
+        csrf.init_app(app)
 
     return app
 
