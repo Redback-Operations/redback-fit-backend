@@ -5,6 +5,12 @@ from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
+def validate_password(pwd: str):
+    if len(pwd) < 8:
+        raise ValueError("Password must be at least 8 characters long.")
+    if pwd.isdigit() or pwd.isalpha():
+        raise ValueError("Password must contain both letters and numbers.")
+    return True
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -15,10 +21,18 @@ def signup():
         password = request.form.get('password')
 
         try: 
+            # Validate inputs
             if not name or not email or not password:
                 raise ValueError("Name, email and password are required.")
+            
+            # Check if email already exists
             if UserCredential.query.filter_by(email=email).first():
                 raise ValueError("Email already registered.")   
+            
+            # Validate password strength
+            error_msg = validate_password(password)
+            if error_msg:
+                raise ValueError(error_msg)
             
             # Create user credentials
             new_user = UserCredential(email=email)
@@ -37,7 +51,7 @@ def signup():
             db.session.add(profile)
             db.session.commit()
 
-
+            # Auto-login after signup
             login_user(new_user)
             return redirect(url_for("home"))
         
@@ -70,3 +84,4 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
+
