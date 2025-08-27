@@ -53,12 +53,15 @@ Log a user in.
 
 Logs out the current user (if logged in) and redirects to login
 
+### Auth
+- Requires an active session (`@login_required`)
+- If not logged in, user is redirected to `\auth\login`
+
 ### Responses
 - **302**: Redirect to `/auth/login`
-- If not logged in -> **302** to `/auth/login` (handled by `unauthorized_handler`)
 
 ### Examples
-    curl -i -X GET http://localhost:5000/auth/logout
+    curl -i http://localhost:5000/auth/logout
 
 ## POST `/auth/logout`
 
