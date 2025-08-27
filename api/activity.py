@@ -15,6 +15,7 @@ def create_activity():
             begin_time=datetime.fromisoformat(data['begin_time']),
             end_time=datetime.fromisoformat(data['end_time']),
             activity_type=data['activity_type'],
+            coach=data.get('coach'),
             average_speed=data['average_speed'],
             max_speed=data['max_speed'],
             average_heart_rate=data['average_heart_rate'],
