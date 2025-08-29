@@ -104,8 +104,8 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    debug = os.environ.get("FLASK_DEBUG") == "1"
     port = int(os.getenv("PORT", 5000))
-    app.run(debug=debug_mode, port=port)
+    app.run(debug=debug, port=port)
 
 
