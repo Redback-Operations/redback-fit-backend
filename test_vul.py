@@ -1,31 +1,28 @@
 import os
-import flask
-from flask import Flask, request
+from flask import Flask, request, render_template_string
+from werkzeug.security import check_password_hash
 import sqlite3
 
 app = Flask(__name__)
 
-# Hardcoded secret (should be flagged)
-SECRET_KEY = "my_hardcoded_secret_key_12345"
+# Load secret from environment
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-not-for-prod")
 
-# Vulnerable SQL query (should be flagged)
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
-    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute(query)
-    user = cursor.fetchone()
-    return "Logged in" if user else "Login failed"
 
-# XSS-like template rendering with unescaped input (should be flagged)
-@app.route('/welcome')
+    with sqlite3.connect("users.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+        row = cursor.fetchone()
+
+    return "Logged in" if (row and check_password_hash(row[0], password)) else "Login failed"
+
 def welcome():
-    user_input = request.args.get('name')
-    return flask.render_template_string("<h1>Welcome " + user_input + "</h1>")
+    user_input = request.args.get('name', '')
+    return render_template_string("<h1>Welcome " + user_input + "</h1>")
 
-# Debug mode enabled (should be flagged)
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
