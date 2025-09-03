@@ -1,10 +1,39 @@
 # /api/profile.py
 from flask import Blueprint, jsonify, request
 from models.user import db, UserProfile
-from flask_cors import CORS
+
+from utils.privacy import(
+    stable_hash, initials, pseudonym, 
+    birth_year_from_iso, age_bucket_from_year
+)
 
 api = Blueprint('profile_api', __name__)
 
+def anonymize_user_record(u):
+    """Build an anonymized profile payload from a UserProfile row.
+    Hides raw PII (name/email/DOB) and exposes safe equivalents."""
+
+    if not u:
+        return None
+
+    # Choose a stable raw key for pseudonymization
+    raw_key = getattr(u, "email", None) or getattr(u, "name", None) or str(getattr(u, "id", ""))
+
+    # Your model uses 'birthDate' (ISO string) rather than 'dob'
+    by = birth_year_from_iso(getattr(u, "birthDate", None))
+
+    return {
+        "id": getattr(u, "id", None),  # safe to keep if your API expects it
+        "pseudoId":     pseudonym("https://redback.fit/user", raw_key),
+        "nameInitials": initials(getattr(u, "name", None)),
+        "emailHash":    stable_hash(getattr(u, "email", None)),
+        "ageBucket":    age_bucket_from_year(by),
+
+        # keep non-PII fields you were already returning
+        "account": getattr(u, "account", None),
+        "gender":  getattr(u, "gender", None),
+        "avatar":  getattr(u, "avatar", None),
+    }
 
 # Profile Endpoints #
 
@@ -17,15 +46,10 @@ def get_profile():
     user_id = 1  # Replace with authenticated user ID
     user = UserProfile.query.filter_by(id=user_id).first()
 
-    if user:
-        return jsonify({
-            'name': user.name,
-            'account': user.account,
-            'birthDate': user.birthDate,
-            'gender': user.gender,
-            'avatar': user.avatar
-        })
-    return jsonify({'message': 'User not found'}), 404
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    return jsonify(anonymize_user_record(user)), 200
 
 
 @api.route('', methods=['POST'])
