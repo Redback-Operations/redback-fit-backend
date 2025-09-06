@@ -1,4 +1,5 @@
 from models import db
+from datetime import datetime, timezone
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
@@ -9,6 +10,8 @@ class UserProfile(db.Model):
     birthDate = db.Column(db.String(10), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
     avatar = db.Column(db.String(200), nullable=True)
+    height = db.Column(db.Float, nullable=True)  # Height in cm or m
+    weight = db.Column(db.Float, nullable=True)  # Weight in kg
 
     def as_dict(self):
         return {
@@ -17,5 +20,7 @@ class UserProfile(db.Model):
             "account": self.account,
             "birthDate": self.birthDate,
             "gender": self.gender,
-            "avatar": self.avatar
+            "avatar": self.avatar,
+            "height": self.height,
+            "weight": self.weight
         }
