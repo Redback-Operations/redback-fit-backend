@@ -4,6 +4,7 @@ from api.routes import api
 from api.goals import goals_bp
 from api.profile import api as profile_api
 from api.dashboard import dashboard_bp
+from api.sessions import sessions_bp
 from models import db
 from dotenv import load_dotenv
 import os
@@ -51,6 +52,7 @@ app.register_blueprint(api, url_prefix='/api')
 app.register_blueprint(goals_bp, url_prefix='/api/goals')
 app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(sessions_bp)
 
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
