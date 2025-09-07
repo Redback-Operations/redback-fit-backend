@@ -30,6 +30,8 @@ class BodyInsight(db.Model):
     training_readiness = db.Column(db.Float, nullable=True)
     endurance_score = db.Column(db.Float, nullable=True)
 
+    # Health Metrics
+    blood_oxygen = db.Column(db.Float, nullable=True)
     def as_dict(self):
         return {
             "id": self.id,
@@ -53,5 +55,7 @@ class BodyInsight(db.Model):
             "heat_acclimation": self.heat_acclimation,
             "altitude_acclimation": self.altitude_acclimation,
             "training_readiness": self.training_readiness,
-            "endurance_score": self.endurance_score
+            "endurance_score": self.endurance_score,
+            #
+            "blood_oxygen": self.blood_oxygen
         }
