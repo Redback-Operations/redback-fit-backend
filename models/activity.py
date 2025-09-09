@@ -25,6 +25,8 @@ class Activity(db.Model):
     elevation_loss = db.Column(db.Float, nullable=False)
     max_elevation = db.Column(db.Float, nullable=False)
     min_elevation = db.Column(db.Float, nullable=False)
+    steps = db.Column(db.Integer,nullable=True)
+    floors = db.Column(db.Integer,nullable=True)
     
 
 
@@ -51,6 +53,8 @@ class Activity(db.Model):
             "elevation_loss": self.elevation_loss,
             "max_elevation": self.max_elevation,
             "min_elevation": self.min_elevation,
+            "steps" : self.steps,
+            "floors" : self.floors,
             "time_series": [ts.as_dict() for ts in self.time_series]
         }
 

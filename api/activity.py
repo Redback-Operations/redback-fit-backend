@@ -28,7 +28,9 @@ def create_activity():
             elevation_gain=data['elevation_gain'],
             elevation_loss=data['elevation_loss'],
             max_elevation=data['max_elevation'],
-            min_elevation=data['min_elevation']
+            min_elevation=data['min_elevation'],
+            steps=data.get('steps'),
+            floors=data.get('floors')
         )
 
         # Handle optional time series data

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
 from models.activity import Activity
 from models.body_insight import BodyInsight
+from models.sleep_data import SleepData
 from models import db
 from datetime import datetime
 
@@ -28,7 +29,7 @@ def get_sessions():
 
 
 
-# Get activity and body insight details for a single session
+# Get activity, body insight and sleep data details for a single session
 @sessions_bp.route('/<int:session_id>/details', methods=['GET'])
 def get_session_details(session_id):
     # Fetch the activity
@@ -39,9 +40,16 @@ def get_session_details(session_id):
     # Fetch the linked BodyInsight, if it exists
     body_insight = BodyInsight.query.filter_by(activity_id=activity.id).first()
 
+    # Fetch sleep data for the same date as the activity
+    sleep_entry = SleepData.query.filter_by(
+        user_id=activity.user_id,
+        date=activity.begin_time.date()
+    ).first()
+
     response = {
-        "session": activity.as_dict(),                  
-        "body_insight": body_insight.as_dict() if body_insight else None
+        "activity": activity.as_dict(),
+        "body_insight": body_insight.as_dict() if body_insight else None,
+        "sleep_data": sleep_entry.as_dict() if sleep_entry else None
     }
 
     return jsonify(response), 200
