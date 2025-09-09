@@ -30,7 +30,8 @@ def create_activity():
             max_elevation=data['max_elevation'],
             min_elevation=data['min_elevation'],
             steps=data.get('steps'),
-            floors=data.get('floors')
+            floors=data.get('floors'),
+            zone_minutes=data.get('zone_minutes')
         )
 
         # Handle optional time series data

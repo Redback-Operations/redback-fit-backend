@@ -27,6 +27,8 @@ class Activity(db.Model):
     min_elevation = db.Column(db.Float, nullable=False)
     steps = db.Column(db.Integer,nullable=True)
     floors = db.Column(db.Integer,nullable=True)
+    zone_minutes = db.Column(db.Integer, nullable=True)
+
     
 
 
@@ -55,6 +57,7 @@ class Activity(db.Model):
             "min_elevation": self.min_elevation,
             "steps" : self.steps,
             "floors" : self.floors,
+            "zone_minutes": self.zone_minutes,
             "time_series": [ts.as_dict() for ts in self.time_series]
         }
 
