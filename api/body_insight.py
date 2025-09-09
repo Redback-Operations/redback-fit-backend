@@ -27,6 +27,11 @@ def add_body_insight():
         if not latest_activity:
             return jsonify({"error": "No activities found for user"}), 404
         activity_id = latest_activity.id
+    
+    # Check for existing body_insight for activity
+    existing = BodyInsight.query.filter_by(activity_id=activity_id).first()
+    if existing:
+        return jsonify({"error": "BodyInsight already exists for this activity"}), 409
 
     try:
         insight = BodyInsight(
@@ -49,6 +54,7 @@ def add_body_insight():
             altitude_acclimation=data.get('altitude_acclimation'),
             training_readiness=data.get('training_readiness'),
             endurance_score=data.get('endurance_score'),
+            blood_oxygen=data.get('blood_oxygen')
         )
         db.session.add(insight)
         db.session.commit()
