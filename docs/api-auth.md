@@ -11,6 +11,15 @@ Base path: `/auth`
 
 ---
 
+## Password Policy
+To ensure account security, all user must meet the following requirements:
+- Minimum length: 8 character
+- Must include atleast: one letter (a-z) and one number (0-9)
+
+### Validation Error Messages
+- Too short -> Password must be at least 8 characters
+- Missing complexity -> Password must contain both letters and numbers.
+
 ## POST `/auth/login`
 
 Log a user in.
@@ -89,7 +98,7 @@ Create a new account (UserCredential + UserProfile)
 - Body fields
     - name (string, required)
     - email (string, required, unique)
-    - password (string, required, validated for strength)
+    - password (string, required, must meet Password Policy)
 
 ### Responses
 - **302**: Redirect to `/home` after successfull signup and auto-login
