@@ -4,8 +4,13 @@ class BodyInsight(db.Model):
     __tablename__ = 'body_insight'
 
     id = db.Column(db.Integer, primary_key=True)
-    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False, unique=True)
 
+    activity = db.relationship(
+        'Activity',
+        backref=db.backref('body_insight', uselist=False)  # Makes SQLAlchemy treat it as one-to-one
+    )
+    
     # Performance Metrics
     vo2_max = db.Column(db.Float, nullable=True)
     lactate_threshold = db.Column(db.Float, nullable=True)
@@ -30,6 +35,8 @@ class BodyInsight(db.Model):
     training_readiness = db.Column(db.Float, nullable=True)
     endurance_score = db.Column(db.Float, nullable=True)
 
+    # Health Metrics
+    blood_oxygen = db.Column(db.Float, nullable=True)
     def as_dict(self):
         return {
             "id": self.id,
@@ -53,5 +60,7 @@ class BodyInsight(db.Model):
             "heat_acclimation": self.heat_acclimation,
             "altitude_acclimation": self.altitude_acclimation,
             "training_readiness": self.training_readiness,
-            "endurance_score": self.endurance_score
+            "endurance_score": self.endurance_score,
+            #
+            "blood_oxygen": self.blood_oxygen
         }

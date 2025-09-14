@@ -8,6 +8,7 @@ from api.dashboard import dashboard_bp
 from api.body_insight import body_insight_bp
 from api.activity import activity_bp
 from api.sessions import sessions_bp
+from api.sleep_data import sleep_data_bp
 from models import db
 from dotenv import load_dotenv
 from api.sync import sync_bp
@@ -81,6 +82,8 @@ app.register_blueprint(sync_bp, url_prefix='/api/synced')
 app.register_blueprint(body_insight_bp, url_prefix='/api/body_insight')
 app.register_blueprint(activity_bp, url_prefix='/api/activity')
 app.register_blueprint(sessions_bp, url_prefix='/api/sessions')
+app.register_blueprint(sleep_data_bp, url_prefix='/api/sleep_data')
+
 # Main index route (login + welcome)
 @app.route('/', methods=['GET', 'POST'])
 def index():
