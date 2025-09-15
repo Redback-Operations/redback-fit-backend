@@ -4,10 +4,12 @@
 # alternatively, find edited files on planner board > 'Add Endpoint for the Dashboard'.
 import sys
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from models import db, UserProfile
 from flask_cors import CORS
 from datetime import datetime, timezone
+from flask_login import login_required, current_user
+from extensions import csrf
 
 # Create the Blueprint for dashboard
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
@@ -38,3 +40,40 @@ def get_dashboard_data():
         })
 
     return jsonify({'message': 'User not found'}), 404
+
+
+def _is_intlike(x):
+    try:
+        int(x)
+        return True
+    except Exception:
+        return False
+    
+@dashboard_bp.route('/activity', methods=['POST'])
+@login_required
+@csrf.exempt 
+def post_activity():
+    body = request.get_json(silent=True) or {}
+
+    # required field
+    date = body.get("date")
+    if not isinstance(date, str):
+        return jsonify({"error": "date is required (YYYY-MM-DD)"}), 400
+
+    # optional numeric fields; default to 0 if missing but validate type if present
+    numeric_fields = [
+        "steps",
+        "minutes_running",
+        "minutes_cycling",
+        "minutes_swimming",
+        "minutes_exercise",
+        "calories",
+    ]
+    out = {"date": date, "user_id": getattr(current_user, "id", None)}
+    for f in numeric_fields:
+        v = body.get(f, 0)
+        if v != 0 and not _is_intlike(v):
+            return jsonify({"error": f"{f} must be an integer"}), 400
+        out[f] = int(v)
+
+    return jsonify(out), 201
