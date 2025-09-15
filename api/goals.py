@@ -84,10 +84,13 @@ def get_user_goals(user_id):
 @goals_bp.route('/<int:goal_id>', methods=['PUT'])
 @login_required
 def update_goal(goal_id):
-    data = request.get_json()
+    data = request.get_json() or {}
 
     # Retrieve the goal with the specified goal_id
     goal = Goal.query.get_or_404(goal_id)
+
+    if goal.user_id != current_user.id:
+        return jsonify({"error": "forbidden"}), 403
     
     # Validation: dates must be ISO format (YYYY-MM-DD)
     if "start_date" in data:
