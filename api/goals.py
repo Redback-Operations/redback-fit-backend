@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, Goal  # Correctly import db and Goal
 from datetime import datetime
+from flask_login import login_required, current_user
 
 # Create the Blueprint for goals
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
@@ -37,6 +38,7 @@ def create_goal():
 
     # Return the goal as a response with a 201 status
     return jsonify(goal.as_dict()), 201
+
 @goals_bp.route('/<int:user_id>', methods=['POST'])
 def create_goal_for_user(user_id):
     data = request.get_json()
@@ -80,33 +82,52 @@ def get_user_goals(user_id):
 
 # Update Goal
 @goals_bp.route('/<int:goal_id>', methods=['PUT'])
+@login_required
 def update_goal(goal_id):
     data = request.get_json()
 
     # Retrieve the goal with the specified goal_id
     goal = Goal.query.get_or_404(goal_id)
+    
+    # Validation: dates must be ISO format (YYYY-MM-DD)
+    if "start_date" in data:
+        try:
+            goal.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid start_date format, expected YYYY-MM-DD"}), 422
+
+    if "end_date" in data:
+        try:
+            goal.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid end_date format, expected YYYY-MM-DD"}), 422
 
     # Loop through all the fields to update and check if they exist in the data
     for field in ['start_date', 'end_date', 'steps', 'minutes_running', 'minutes_cycling',
                   'minutes_swimming', 'minutes_exercise', 'calories']:
         if field in data:
-            # If it's a date field, convert it
-            if field in ['start_date', 'end_date']:
-                setattr(goal, field, datetime.strptime(data[field], '%Y-%m-%d').date())
-            else:
-                setattr(goal, field, data[field])
+            try:
+                val = int(data[field])
+            except (TypeError, ValueError):
+                return jsonify({"error": f"{field} must be a number"}), 422
+            if val < 0:
+                return jsonify({"error": f"{field} cannot be negative value"}), 422
+            setattr(goal, field, val)
 
     # Commit the changes to the database
     db.session.commit()
     
     # Return the updated goal as a response
-    return jsonify(goal.as_dict())
+    return jsonify(goal.as_dict()), 200
 
 # Delete Goal
 @goals_bp.route('/<int:goal_id>', methods=['DELETE'])
 def delete_goal(goal_id):
     # Retrieve the goal by goal_id
     goal = Goal.query.get_or_404(goal_id)
+
+    if goal.user_id != current_user.id:
+        return jsonify({"error": "forbidden"}), 403
     
     # Delete the goal from the session
     db.session.delete(goal)
