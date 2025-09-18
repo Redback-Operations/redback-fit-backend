@@ -49,6 +49,7 @@ def add_body_insight():
             altitude_acclimation=data.get('altitude_acclimation'),
             training_readiness=data.get('training_readiness'),
             endurance_score=data.get('endurance_score'),
+            blood_oxygen=data.get('blood_oxygen')
         )
         db.session.add(insight)
         db.session.commit()
