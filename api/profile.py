@@ -2,10 +2,27 @@
 from flask import Blueprint, jsonify, request
 from models.user import db, UserProfile
 from flask_cors import CORS
+from flask import request, jsonify, g
+from firebase_admin import auth as admin_auth
 
 api = Blueprint('profile_api', __name__)
 
+@api.before_request
+def profile_auth_gate():
+    # Allow CORS preflight through if you use it
+    if request.method == "OPTIONS":
+        return None
 
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = header.split(" ", 1)[1].strip()
+    try:
+        g.firebase_user = admin_auth.verify_id_token(token)
+    except Exception:
+        return jsonify({"error": "Unauthorized"}), 401
+    
 # Profile Endpoints #
 
 # These routes are used by the frontend to fetch/update the user profile.

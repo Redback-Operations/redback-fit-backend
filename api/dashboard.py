@@ -4,11 +4,30 @@ from flask import Blueprint, jsonify
 from models.user import db, UserProfile
 from flask_cors import CORS
 from datetime import datetime, timezone
+from flask import request, jsonify, g
+from firebase_admin import auth as admin_auth
 
 from models.body_insight import BodyInsight
 from models.activity import Activity
 # Create the Blueprint for dashboard
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
+
+# protect dashboard route with Firebase ID token
+@dashboard_bp.before_request
+def dashboard_auth_gate():
+    if request.method == "OPTIONS":
+        return None
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = header.split(" ", 1)[1].strip()
+    try:
+        g.firebase_user = admin_auth.verify_id_token(token)
+    except Exception:
+        return jsonify({"error": "Unauthorized"}), 401
+
+
+
 
 # Dashboard Endpoints #
 

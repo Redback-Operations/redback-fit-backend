@@ -1,9 +1,30 @@
 from flask import Blueprint, request, jsonify
 from models.goal import db, Goal  # Correctly import db and Goal
 from datetime import datetime
+from flask import request, jsonify, g
+from firebase_admin import auth as admin_auth
+
 
 # Create the Blueprint for goals
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
+
+# protect goals route with Firebase ID token
+@goals_bp.before_request
+def goals_auth_gate():
+    
+    if request.method == "OPTIONS":
+        return None
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = header.split(" ", 1)[1].strip()
+    try:
+        g.firebase_user = admin_auth.verify_id_token(token)
+    except Exception:
+        return jsonify({"error": "Unauthorized"}), 401
+
+
+
 
 # Create Goal
 @goals_bp.route('/', methods=['POST'])
