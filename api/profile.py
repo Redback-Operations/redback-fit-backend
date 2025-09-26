@@ -16,8 +16,8 @@ def anonymize_user_record(u):
     if not u:
         return None
 
-    # Choose a stable raw key for pseudonymization
-    raw_key = getattr(u, "email", None) or getattr(u, "name", None) or str(getattr(u, "id", ""))
+    email_value = getattr(u, "email", None) or getattr(u, "account", None)
+    raw_key = email_value or getattr(u, "name", None) or str(getattr(u, "id", ""))
 
     # Your model uses 'birthDate' (ISO string) rather than 'dob'
     by = birth_year_from_iso(getattr(u, "birthDate", None))
@@ -26,7 +26,7 @@ def anonymize_user_record(u):
         "id": getattr(u, "id", None),  # safe to keep if your API expects it
         "pseudoId":     pseudonym("https://redback.fit/user", raw_key),
         "nameInitials": initials(getattr(u, "name", None)),
-        "emailHash":    stable_hash(getattr(u, "email", None)),
+        "emailHash": stable_hash(email_value),
         "ageBucket":    age_bucket_from_year(by),
 
         # keep non-PII fields you were already returning
@@ -42,12 +42,13 @@ def anonymize_user_record(u):
 
 @api.route('', methods=['GET'])
 def get_profile():
-    # In future develpment get the user_id from a session or token 
+    # In future development get the user_id from a session or token 
     user_id = 1  # Replace with authenticated user ID
     user = UserProfile.query.filter_by(id=user_id).first()
 
     if not user:
         return jsonify({'message': 'User not found'}), 404
+
 
     return jsonify(anonymize_user_record(user)), 200
 
